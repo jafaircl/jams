@@ -16,23 +16,7 @@ export class NegativeKeywords{
     this.props = props;
   }
   
-  /*
-  import { NegativeKeywords } from './negatives/keywords';
-
-  const main = () => {
-
-    new NegativeKeywords({
-      conditions: ['CampaignName CONTAINS_IGNORE_CASE "(Search)"'],
-      dateRange: 'LAST_30_DAYS',
-    }).crossGroup({
-      exclude: ['peri', 'of', 'is', 'a'],
-      phrase: true,
-      exact: false,
-      broad: true
-    });
-  };
-  */
-  crossGroup(params){
+  crossAdGroup(params){
     
     let keywordConditions = ['Status = ENABLED', 'QualityScore > 2'];
     let adGroupConditions = ['Status = ENABLED'];
@@ -93,9 +77,9 @@ export class NegativeKeywords{
             
             let orphans = ['s', 'es', 'ies'];
             
-            if(params && params.exclude){
-              for(let k in params.exclude){
-                orphans.push(params.exclude[k]);
+            if(params && params.ignore){
+              for(let k in params.ignore){
+                orphans.push(params.ignore[k]);
               }
             }
             
