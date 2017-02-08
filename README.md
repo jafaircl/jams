@@ -1,5 +1,4 @@
-#Jams
-## JavaScript AdWords Modules
+# JavaScript AdWords Modules
 
 ## Introduction
 
