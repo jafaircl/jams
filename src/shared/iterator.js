@@ -45,22 +45,8 @@ export class Iterator {
     conditions: keywordConditions,
     dateRange: dateRange
   }).toArray({
-    fields: {
-      adGroupId: function(){ return this.getAdGroup().getId(); },
-      text: function(){ return this.getText(); },
-      adArray: function(){
-        let arr = [];
-        let ads = this.ads().get();
-        while(ads.hasNext()){
-          let ad = ads.next();
-          arr.push({
-            id: ad.getId(),
-            stats: ad.getStatsFor(dateRange)
-          });
-        }
-        return arr;
-      }
-    }
+    adGroupId(){ return this.getAdGroup().getId(); },
+    text(){ return this.getText(); },
   });
   */
   toArray(input){
@@ -70,10 +56,10 @@ export class Iterator {
     while(this.iterator.hasNext()) {
       this.item = this.iterator.next();
       
-      if(input && input.fields){
+      if(input){
         let obj = {};
-        for(let field in input.fields){
-          obj[field] = input.fields[field].call(this);
+        for(let field in input){
+          obj[field] = input[field].call(this.item);
         }
         arr.push(obj);
       } else {

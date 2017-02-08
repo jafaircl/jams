@@ -20,9 +20,9 @@ const testingAdLabel = 'Test In Progress';
 
 // Email
 const emailRecipient = 'jfaircloth@cocg.co';
-const accountLabel = 'Jonathan';
+const accountName = AdWordsApp.currentAccount().getName();
 
-const runTest = function() {
+const main = function() {
   
   // Create the labels if they don't exist
   addLabel(controlAdLabel, '#4CAF50');
@@ -35,21 +35,17 @@ const runTest = function() {
   
   // Start an email table
   let table = new HtmlTable({
-    title: AdWordsApp.currentAccount().getName() + ' - A/B Testing Results',
+    title: accountName + ' - A/B Testing Results',
     columns: ['Campaign', 'Ad Group', 'Probability', 'Expected Loss'],
     style: tableStyle
   });
   
+  let sendEmail = false;
+  
   // Build an array of ads in the account
   let ads = new Iterator({
     entity: AdWordsApp.ads(),
-    conditions: [
-      'CampaignStatus = ENABLED',
-      'AdGroupStatus = ENABLED',
-      'Status = ENABLED',
-      'CampaignName CONTAINS_IGNORE_CASE "Search"',
-      minImpressions
-    ],
+    conditions: ['Status = ENABLED','CampaignName CONTAINS_IGNORE_CASE "Search"', minImpressions],
     dateRange: dateRange,
   }).toArray({
     ad(){ return this; },
@@ -111,11 +107,13 @@ const runTest = function() {
         // Condition: B > A and clears both thresholds
         if (decision < decisionThreshold && test > probabilityThreshold){
           group[j].ad.applyLabel(winningAdLabel);
+          sendEmail = true;
           table.addRow([group[j].campaignName, group[j].adGroupName, (test * 100).toFixed(2) + '%', (decision * 100).toFixed(2) + '%']);
           
         // Condition: A > B and clears both thresholds
         } else if (decision < decisionThreshold && test < 1 - probabilityThreshold){
           group[j].ad.applyLabel(losingAdLabel);
+          sendEmail = true;
           table.addRow([group[j].campaignName, group[j].adGroupName, (test * 100).toFixed(2) + '%', (decision * 100).toFixed(2) + '%']);
           
         // Condition: Either decision or probability threshold is not met
@@ -131,32 +129,13 @@ const runTest = function() {
   
   table.close();
   
-  return table.html;
+  if (sendEmail === true){
+    MailApp.sendEmail({
+      to: emailRecipient,
+      subject: accountName + ' - A/B Testing Results',
+      htmlBody: table.html,
+    });
+  }
 };
 
-function buildEmail(results){
-  let emailBody = '';
-  
-  for (var i = 0; i < results.length; i++) {
-    emailBody += results[i].getReturnValue();
-  }
-  
-  MailApp.sendEmail({
-    to: emailRecipient,
-    subject: 'A/B Testing Results',
-    htmlBody: emailBody,
-  });
-}
-
-function main() {
-  
-  let accountSelector = MccApp.accounts()
-      .withCondition(`LabelNames CONTAINS_IGNORE_CASE "${accountLabel}"`)
-      .orderBy('Name');
-  
-  accountSelector.executeInParallel('runTest', 'buildEmail');
-}
-
 main();
-runTest();
-buildEmail();

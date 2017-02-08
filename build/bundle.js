@@ -22,71 +22,6 @@ var createClass = function () {
   };
 }();
 
-
-
-
-
-
-
-var get = function get(object, property, receiver) {
-  if (object === null) object = Function.prototype;
-  var desc = Object.getOwnPropertyDescriptor(object, property);
-
-  if (desc === undefined) {
-    var parent = Object.getPrototypeOf(object);
-
-    if (parent === null) {
-      return undefined;
-    } else {
-      return get(parent, property, receiver);
-    }
-  } else if ("value" in desc) {
-    return desc.value;
-  } else {
-    var getter = desc.get;
-
-    if (getter === undefined) {
-      return undefined;
-    }
-
-    return getter.call(receiver);
-  }
-};
-
-var inherits = function (subClass, superClass) {
-  if (typeof superClass !== "function" && superClass !== null) {
-    throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
-  }
-
-  subClass.prototype = Object.create(superClass && superClass.prototype, {
-    constructor: {
-      value: subClass,
-      enumerable: false,
-      writable: true,
-      configurable: true
-    }
-  });
-  if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
-};
-
-
-
-
-
-
-
-
-
-
-
-var possibleConstructorReturn = function (self, call) {
-  if (!self) {
-    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
-  }
-
-  return call && (typeof call === "object" || typeof call === "function") ? call : self;
-};
-
 var repeatableMethods = {
   withIds: 'ids',
   withCondition: 'conditions',
@@ -134,22 +69,8 @@ var Iterator = function () {
       conditions: keywordConditions,
       dateRange: dateRange
     }).toArray({
-      fields: {
-        adGroupId: function(){ return this.getAdGroup().getId(); },
-        text: function(){ return this.getText(); },
-        adArray: function(){
-          let arr = [];
-          let ads = this.ads().get();
-          while(ads.hasNext()){
-            let ad = ads.next();
-            arr.push({
-              id: ad.getId(),
-              stats: ad.getStatsFor(dateRange)
-            });
-          }
-          return arr;
-        }
-      }
+      adGroupId(){ return this.getAdGroup().getId(); },
+      text(){ return this.getText(); },
     });
     */
 
@@ -162,10 +83,10 @@ var Iterator = function () {
       while (this.iterator.hasNext()) {
         this.item = this.iterator.next();
 
-        if (input && input.fields) {
+        if (input) {
           var obj = {};
-          for (var field in input.fields) {
-            obj[field] = input.fields[field].call(this);
+          for (var field in input) {
+            obj[field] = input[field].call(this.item);
           }
           arr.push(obj);
         } else {
@@ -178,199 +99,18 @@ var Iterator = function () {
   return Iterator;
 }();
 
-// Type checking
-function getType(elem) {
-  return Object.prototype.toString.call(elem).slice(8, -1);
-}
-
-
-
-
-
-
-
-
-
-function isNumber(elem) {
-  return getType(elem) === 'Number';
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Error handling
-
-var Bidder = function (_Iterator) {
-  inherits(Bidder, _Iterator);
-
-  function Bidder(props) {
-    classCallCheck(this, Bidder);
-    return possibleConstructorReturn(this, (Bidder.__proto__ || Object.getPrototypeOf(Bidder)).call(this, props));
-  }
-
-  createClass(Bidder, [{
-    key: 'custom',
-    value: function custom(input) {
-      var dateRange = this.props.dateRange ? this.props.dateRange : 'ALL_TIME';
-
-      get(Bidder.prototype.__proto__ || Object.getPrototypeOf(Bidder.prototype), 'run', this).call(this, function () {
-        this.dateRange = dateRange;
-        this.stats = this.getStatsFor(this.dateRange);
-        var minBid = input.minBid.call(this);
-        var maxBid = input.maxBid.call(this);
-        var bid = input.bid.call(this);
-
-        bidderSetBid(this, bid, minBid, maxBid);
-      });
-    }
-  }, {
-    key: 'targetCpa',
-    value: function targetCpa(input) {
-      this.custom({
-        minBid: function minBid() {
-          return bidderMinBid.call(this, input);
-        },
-        maxBid: function maxBid() {
-          return bidderMaxBid.call(this, input);
-        },
-        bid: function bid() {
-          var multi = input.multiplier ? input.multiplier : 1;
-          if (input.targetCpa) {
-            return input.targetCpa * this.stats.getConversionRate() * multi;
-          } else {
-            var campaign = this.getCampaign().getStatsFor(this.dateRange);
-            return campaign.getCost() / campaign.getConversions() * this.stats.getConversionRate() * multi;
-          }
-        }
-      });
-    }
-  }, {
-    key: 'randomize',
-    value: function randomize(input) {
-      this.custom({
-        minBid: function minBid() {
-          return bidderMinBid.call(this, input);
-        },
-        maxBid: function maxBid() {
-          return bidderMaxBid.call(this, input);
-        },
-        bid: function bid() {
-          return Math.random() * (input.maxBid - input.minBid) + input.minBid;
-        }
-      });
-    }
-  }, {
-    key: 'ortb',
-    value: function ortb(input) {
-      this.custom({
-        minBid: function minBid() {
-          return bidderMinBid.call(this, input);
-        },
-        maxBid: function maxBid() {
-          return bidderMaxBid.call(this, input);
-        },
-        bid: function bid() {
-          var conversions = this.stats.getConversions();
-          var clicks = this.stats.getClicks();
-          var impressions = this.stats.getImpressions();
-          var conversionRate = this.stats.getConversionRate();
-          var ctr = this.stats.getCtr();
-          var cost = this.stats.getCost();
-          var averageCpc = this.stats.getAverageCpc();
-          var averagePos = this.stats.getAveragePosition();
-
-          if (input.realTime !== false) {
-            var today = this.getStatsFor('TODAY');
-            conversions += today.getConversions();
-            clicks += today.getClicks();
-            impressions += today.getImpressions();
-            cost += today.getCost();
-            conversionRate = conversions / clicks;
-            ctr = clicks / impressions;
-            averageCpc = cost / clicks;
-          }
-
-          var adjust = averagePos === null ? 1 : averagePos;
-
-          if (this.getEntityType() === 'Keyword') {
-            adjust = adjust * this.getQualityScore();
-          }
-
-          var multi = input.multiplier ? input.multiplier : 1;
-          var r = conversions > 0 ? conversionRate : ctr;
-          var B = this.getCampaign().getBudget();
-          var l = input.tuningParameter ? input.tuningParameter : adjust / (averageCpc * ctr);
-          var T = clicks / input.statsDuration;
-
-          return multi * 2 * r * Math.pow(B * Math.pow(l, 2) / T, 1 / 3);
-        }
-      });
-    }
-  }]);
-  return Bidder;
-}(Iterator);
-
-function bidderSetBid(entity, bid, minBid, maxBid) {
-  var strategy = entity.bidding().getCpm() <= 0.01 ? 'setCpc' : 'setCpm';
-
-  if (bid > maxBid) {
-    entity.bidding()[strategy](maxBid);
-  } else if (bid < minBid) {
-    entity.bidding()[strategy](minBid);
-  } else if (isNumber(bid) && isNaN(bid)) {
-    Logger.log(bid + ' is not a valid number');
-  } else {
-    entity.bidding()[strategy](bid);
-  }
-}
-
-function bidderMinBid(input) {
-  var minBid = input.minBid;
-
-  try {
-    this.getCampaign().display().placements().get().next();
-  } catch (e) {
-    if (this.getEntityType() === 'Keyword' && isNumber(this.getFirstPageCpc()) && this.getFirstPageCpc() < input.maxBid && this.getFirstPageCpc() > input.minBid) {
-      return this.getFirstPageCpc();
-    }
-  }
-  return minBid;
-}
-
-function bidderMaxBid(input) {
-  var maxBid = input.maxBid;
-
-  try {
-    this.getCampaign().display().placements().get().next();
-  } catch (e) {
-    if (this.getEntityType() === 'Keyword' && isNumber(this.getTopOfPageCpc()) && this.getFirstPageCpc() != this.getTopOfPageCpc() && this.getTopOfPageCpc() < input.maxBid && this.getTopOfPageCpc() > input.minBid) {
-      return this.getTopOfPageCpc() > this.stats.getAverageCpc() ? this.getTopOfPageCpc() : this.stats.getAverageCpc();
-    }
-  }
-  return maxBid;
-}
-
 var slice = Array.prototype.slice;
 var toString = Object.prototype.toString;
 
-var isArray$1 = Array.isArray || function isArray(arg) {
+var isArray = Array.isArray || function isArray(arg) {
   return toString.call(arg) === "[object Array]";
 };
 
-function isFunction$1(arg) {
+function isFunction(arg) {
   return toString.call(arg) === "[object Function]";
 }
 
-function isNumber$1(arg) {
+function isNumber(arg) {
   return typeof arg === "number" && arg === arg;
 }
 
@@ -488,7 +228,7 @@ var jStat = function () {
       var res = new Array(rows);
       var i, j;
 
-      if (isFunction$1(cols)) {
+      if (isFunction(cols)) {
         func = cols;
         cols = rows;
       }
@@ -1151,13 +891,13 @@ var jStat = function () {
   }, {
     key: "zeros",
     value: function zeros(rows, cols) {
-      if (!isNumber$1(cols)) cols = rows;
+      if (!isNumber(cols)) cols = rows;
       return this.create(rows, cols, retZero);
     }
   }, {
     key: "zscore",
     value: function zscore(value, mean, sd) {
-      if (isNumber$1(mean)) {
+      if (isNumber(mean)) {
         return (value - mean) / sd;
       }
       return (value - this.mean(mean)) / this.stdev(mean, sd);
@@ -1166,7 +906,7 @@ var jStat = function () {
     key: "ztest",
     value: function ztest(value, mean, sd, sides) {
       var z;
-      if (isArray$1(mean)) {
+      if (isArray(mean)) {
         // (value, array, sides, flag)
         z = this.zscore(value, mean, sides);
         return sd === 1 ? j$.normal.cdf(-Math.abs(z), 0, 1) : j$.normal.cdf(-Math.abs(z), 0, 1) * 2;
@@ -2338,182 +2078,293 @@ function bayesianDecision(alphaA, betaA, alphaB, betaB) {
   return b1 * h1 - b2 * h2;
 }
 
-var Modifier = function (_Iterator) {
-  inherits(Modifier, _Iterator);
-
-  function Modifier(props) {
-    classCallCheck(this, Modifier);
-    return possibleConstructorReturn(this, (Modifier.__proto__ || Object.getPrototypeOf(Modifier)).call(this, props));
-  }
-
-  createClass(Modifier, [{
-    key: 'bayesian',
-    value: function bayesian(input) {
-
-      var dateRange = this.props.dateRange ? this.props.dateRange : 'ALL_TIME';
-      var maxModifier = input.maxModifier ? input.maxModifier : 0.25;
-      var decisionThreshold = input.decisionThreshold ? input.decisionThreshold : 0.005;
-
-      get(Modifier.prototype.__proto__ || Object.getPrototypeOf(Modifier.prototype), 'run', this).call(this, function () {
-        Logger.log(this.getStatsFor(dateRange).getAverageTimeOnSite());
-        var stats = realtimeStats(this, dateRange);
-        var campaign = realtimeStats(this.getCampaign(), dateRange);
-        var alphaA = void 0,
-            betaA = void 0,
-            alphaB = void 0,
-            betaB = void 0;
-
-        if (stats.conversions > 0) {
-          alphaA = stats.conversions;
-          betaA = stats.clicks - alphaA;
-          alphaB = campaign.conversions;
-          betaB = campaign.clicks - alphaB;
-        } else {
-          alphaA = stats.clicks;
-          betaA = stats.impressions - alphaA;
-          alphaB = campaign.clicks;
-          betaB = campaign.impressions - alphaB;
-        }
-
-        var decision = bayesianDecision(alphaA, betaA, alphaB, betaB);
-
-        if (decision < decisionThreshold) {
-          var modifier = 1 - maxModifier + 2 * maxModifier * (1 - bayesianTest(alphaA, betaA, alphaB, betaB));
-          this.setBidModifier(modifier);
-        }
-      });
-    }
-  }]);
-  return Modifier;
-}(Iterator);
-
-function realtimeStats(entity, dateRange) {
-  var history = entity.getStatsFor(dateRange);
-  var today = entity.getStatsFor('TODAY');
-  return {
-    clicks: history.getClicks() + today.getClicks(),
-    conversions: history.getConversions() + today.getConversions(),
-    cost: history.getCost() + today.getCost(),
-    impressions: history.getImpressions() + today.getImpressions(),
-    views: history.getViews() + today.getViews()
-  };
+// Type checking
+function getType(elem) {
+  return Object.prototype.toString.call(elem).slice(8, -1);
 }
 
-var maxSearchBid = 15;
-var minSearchBid = 0.75;
+function isArray$1(elem) {
+  return getType(elem) === 'Array';
+}
 
-var maxDisplayBid = 2;
-var minDisplayBid = 0.75;
 
-var maxModifier = 0.2;
 
-var conversionThreshold = 1;
 
-var hourToRandomize = 3;
 
-var modifierCriteria = ['AdWordsApp.targeting().targetedLocations()', 'AdWordsApp.targeting().platforms()'];
 
-var searchBidCriteria = ['AdWordsApp.keywords()'];
 
-var displayBidCriteria = ['AdWordsApp.adGroups()', 'AdWordsApp.display().keywords()', 'AdWordsApp.display().topics()', 'AdWordsApp.display().audiences()'];
 
-var hourOfDay = new Date().getHours();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Error handling
+
+function addLabel(labelName, labelColor) {
+
+  var labelIterator = AdWordsApp.labels().withCondition('Name = "' + labelName + '"').get();
+  if (!labelIterator.hasNext()) {
+    AdWordsApp.createLabel(labelName, '', labelColor);
+  }
+}
+
+/*
+ * Delete A Label From An Account
+ * ---
+ * @param {string} contains - A unique text string for all the labesl to delete.
+ */
+
+
+/*
+ * Remove Labels From An Entity
+ * ---
+ * @param {string} labelName - A name for the label
+ * @param {string} entity - An entity from which to remove labels
+ */
+function removeLabelFrom(entity, labelNames) {
+  var labelString = isArray$1(labelNames) ? labelNames.join('","') : labelNames;
+
+  new Iterator({
+    entity: entity,
+    conditions: ['LabelNames CONTAINS_ANY ["' + labelString + '"]']
+  }).run(function () {
+    if (isArray$1(labelNames)) {
+      for (var i in labelNames) {
+        this.removeLabel(labelNames[i]);
+      }
+    } else {
+      this.removeLabel(labelNames);
+    }
+  });
+}
+
+function addTableRow(arr) {
+  var tag = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'td';
+
+
+  var html = '<tr>';
+
+  for (var col in arr) {
+    html += '<' + tag + '>' + arr[col] + '</' + tag + '>';
+  }
+
+  return html + '</tr>';
+}
+
+var HtmlTable = function () {
+  function HtmlTable(props) {
+    classCallCheck(this, HtmlTable);
+
+    this.cols = props.columns;
+    this.html = props.title != undefined ? '<body>\n        <style>' + props.style + '</style>\n        <table>\n          <thead>\n            <tr>\n              <th colspan = "' + this.cols.length + '">' + props.title + '</th>\n            </tr>\n              ' + addTableRow(this.cols, 'th') + '\n          </thead>\n          <tbody>' : '<body>\n        <style>' + props.style + '</style>\n        <table>\n          <thead>' + addTableRow(this.cols, 'th') + '</thead>\n          <tbody>';
+  }
+
+  createClass(HtmlTable, [{
+    key: 'addRow',
+    value: function addRow(arr) {
+      var tag = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'td';
+
+
+      this.html += '<tr>';
+
+      for (var col in arr) {
+        this.html += '<' + tag + '>' + arr[col] + '</' + tag + '>';
+      }
+
+      return this.html + '</tr>';
+    }
+  }, {
+    key: 'close',
+    value: function close() {
+      return this.html += '</tbody></table></body>';
+    }
+  }]);
+  return HtmlTable;
+}();
+
+var tableStyle = '\n  * {\n    margin: 0;\n    padding: 0;\n    box-sizing: border-box;\n  }\n\n  body {\n    margin-top: 12px;\n    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;\n    color: #333;\n  }\n\n  table {\n    text-align: left;\n    font-size: 13px;\n    line-height: 24px;\n    border-collapse: separate;\n    border-spacing: 0;\n    border: 2px solid #E88F47;\n    margin: 12px 0 12px 24px;\n    border-radius: .25rem;\n  }\n\n  thead tr:first-child {\n    background: rgb(232,143,71);\n    color: #fff;\n    border: none;\n  }\n\n  th:first-child, td:first-child { padding: 0 15px 0 20px; }\n\n  thead tr:last-child th { border-bottom: 3px solid #ddd; }\n\n  tbody tr:hover { background-color: rgba(100,154,166,.1); cursor: default; }\n  tbody tr:last-child td { border: none; }\n  tbody td {\n    padding-right: 24px;\n    border-bottom: 1px solid #ddd;\n  }\n';
+/*
+
+  td:last-child {
+    text-align: center;
+    padding-right: 10px;
+  }
+  */
+
+// Ad conditions
+var minImpressions = 'Impressions > 100';
+var dateRange = 'ALL_TIME';
+
+// Testing variables
+var conversionsGreaterThan = 0;
+var decisionThreshold = 0.002;
+var probabilityThreshold = 0.8;
+
+// Labels
+var controlAdLabel = 'Control Ad';
+var winningAdLabel = 'Winning Ad';
+var losingAdLabel = 'Losing Ad';
+var testingAdLabel = 'Test In Progress';
+
+// Email
+var emailRecipient = 'jfaircloth@cocg.co';
+var accountLabel = 'Jonathan';
+
+var runTest = function runTest() {
+
+  // Create the labels if they don't exist
+  addLabel(controlAdLabel, '#4CAF50');
+  addLabel(winningAdLabel, '#2196F3');
+  addLabel(losingAdLabel, '#F44336');
+  addLabel(testingAdLabel, '#FFC107');
+
+  // Remove labels from ads
+  removeLabelFrom(AdWordsApp.ads(), [controlAdLabel, winningAdLabel, losingAdLabel, testingAdLabel]);
+
+  // Start an email table
+  var table = new HtmlTable({
+    title: AdWordsApp.currentAccount().getName() + ' - A/B Testing Results',
+    columns: ['Campaign', 'Ad Group', 'Probability', 'Expected Loss'],
+    style: tableStyle
+  });
+
+  // Build an array of ads in the account
+  var ads = new Iterator({
+    entity: AdWordsApp.ads(),
+    conditions: ['CampaignStatus = ENABLED', 'AdGroupStatus = ENABLED', 'Status = ENABLED', 'CampaignName CONTAINS_IGNORE_CASE "Search"', minImpressions],
+    dateRange: dateRange
+  }).toArray({
+    ad: function ad() {
+      return this;
+    },
+    adGroupId: function adGroupId() {
+      return this.getAdGroup().getId();
+    },
+    adGroupName: function adGroupName() {
+      return this.getAdGroup().getName();
+    },
+    campaignName: function campaignName() {
+      return this.getCampaign().getName();
+    },
+    id: function id() {
+      return this.getId();
+    },
+    stats: function stats() {
+      var stats = this.getStatsFor(dateRange);
+      return {
+        clicks: stats.getClicks(),
+        conversions: stats.getConversions(),
+        impressions: stats.getImpressions()
+      };
+    }
+  });
+
+  var _loop = function _loop(i) {
+    // Filter the array for ads in the same ad group
+    var group = ads.filter(function (ad) {
+      return ad.adGroupId === ads[i].adGroupId;
+    });
+
+    // Sort the group by impressions in descending order
+    group.sort(function (a, b) {
+      return b.stats.impressions - a.stats.impressions;
+    });
+
+    // Check to make sure there are at least 2 ads
+    if (group.length > 1) {
+
+      // Apply label to control ad
+      group[0].ad.applyLabel(controlAdLabel);
+
+      // Skip the first ad so we can use it as a control
+      for (var j = 1; j < group.length; j += 1) {
+        var alphaA = void 0,
+            alphaB = void 0,
+            betaA = void 0,
+            betaB = void 0;
+
+        // If either ad is over the conversion threshold, use conversion rate
+        if (group[0].stats.conversions > conversionsGreaterThan || group[j].stats.conversions > conversionsGreaterThan) {
+          alphaA = group[0].stats.conversions;
+          betaA = group[0].stats.clicks - alphaA;
+          alphaB = group[j].stats.conversions;
+          betaB = group[j].stats.clicks - alphaB;
+
+          // Otherwise, use click through rate
+        } else {
+          alphaA = group[0].stats.clicks;
+          betaA = group[0].stats.impressions - alphaA;
+          alphaB = group[j].stats.clicks;
+          betaB = group[j].stats.impressions - alphaB;
+        }
+
+        // Get the probability
+        var test = bayesianTest(alphaA, betaA, alphaB, betaB);
+        // Check against decision threshould
+        var decision = bayesianDecision(alphaA, betaA, alphaB, betaB);
+
+        // Condition: B > A and clears both thresholds
+        if (decision < decisionThreshold && test > probabilityThreshold) {
+          group[j].ad.applyLabel(winningAdLabel);
+          table.addRow([group[j].campaignName, group[j].adGroupName, (test * 100).toFixed(2) + '%', (decision * 100).toFixed(2) + '%']);
+
+          // Condition: A > B and clears both thresholds
+        } else if (decision < decisionThreshold && test < 1 - probabilityThreshold) {
+          group[j].ad.applyLabel(losingAdLabel);
+          table.addRow([group[j].campaignName, group[j].adGroupName, (test * 100).toFixed(2) + '%', (decision * 100).toFixed(2) + '%']);
+
+          // Condition: Either decision or probability threshold is not met
+        } else {
+          group[j].ad.applyLabel(testingAdLabel);
+        }
+
+        // Get the index of the tested ad & remove it so we don't keep testing it
+        ads.splice(ads.indexOf(group[j]), 1);
+      }
+    }
+  };
+
+  for (var i in ads) {
+    _loop(i);
+  }
+
+  table.close();
+
+  return table.html;
+};
+
+function buildEmail(results) {
+  var emailBody = '';
+
+  for (var i = 0; i < results.length; i++) {
+    emailBody += results[i].getReturnValue();
+  }
+
+  MailApp.sendEmail({
+    to: emailRecipient,
+    subject: 'A/B Testing Results',
+    htmlBody: emailBody
+  });
+}
 
 function main() {
 
-  /*
-   *  Bid Modifiers
-   */
-  for (var i in modifierCriteria) {
-    new Modifier({
-      entity: eval(modifierCriteria[i]),
-      conditions: ['Impressions > 100'],
-      dateRange: 'LAST_30_DAYS'
-    }).bayesian({
-      maxModifier: maxModifier,
-      decisionThreshold: 0.002
-    });
-  }
+  var accountSelector = MccApp.accounts().withCondition('LabelNames CONTAINS_IGNORE_CASE "' + accountLabel + '"').orderBy('Name');
 
-  /*
-   *  Search
-   */
-  for (var _i in searchBidCriteria) {
-
-    // Optimize bids for entities with multiple conversions
-    new Bidder({
-      entity: eval(searchBidCriteria[_i]),
-      conditions: ['CampaignStatus = ENABLED', 'Status = ENABLED', 'CampaignName CONTAINS_IGNORE_CASE "search"', 'Clicks > 0', 'Conversions > ' + conversionThreshold],
-      dateRange: 'LAST_30_DAYS'
-    }).targetCpa({
-      minBid: minSearchBid,
-      maxBid: maxSearchBid,
-      multiplier: 0.9
-    });
-
-    // Optimize for CTR for entities with clicks but few conversions
-    new Bidder({
-      entity: eval(searchBidCriteria[_i]),
-      conditions: ['CampaignStatus = ENABLED', 'Status = ENABLED', 'CampaignName CONTAINS_IGNORE_CASE "search"', 'Clicks > 0', 'Conversions <= ' + conversionThreshold],
-      dateRange: 'LAST_30_DAYS'
-    }).ortb({
-      minBid: minSearchBid,
-      maxBid: maxSearchBid,
-      statsDuration: 30
-    });
-
-    // Randomize for entities with no clicks 2x/day
-    if (hourOfDay === hourToRandomize) {
-      new Bidder({
-        entity: eval(searchBidCriteria[_i]),
-        conditions: ['CampaignStatus = ENABLED', 'Status = ENABLED', 'CampaignName CONTAINS_IGNORE_CASE "search"', 'Clicks = 0'],
-        dateRange: 'LAST_30_DAYS'
-      }).randomize({
-        minBid: minSearchBid,
-        maxBid: maxSearchBid
-      });
-    }
-  }
-
-  /*
-   *  Display
-   */
-  for (var _i2 in displayBidCriteria) {
-
-    // Optimize bids for entities with multiple conversions
-    new Bidder({
-      entity: eval(displayBidCriteria[_i2]),
-      conditions: ['CampaignStatus = ENABLED', 'CampaignName CONTAINS_IGNORE_CASE "display"', 'Clicks > 0', 'Conversions > ' + conversionThreshold],
-      dateRange: 'LAST_30_DAYS'
-    }).targetCpa({
-      minBid: minDisplayBid,
-      maxBid: maxDisplayBid,
-      multiplier: 0.9
-    });
-
-    // Optimize for CTR for entities with clicks but few conversions
-    new Bidder({
-      entity: eval(displayBidCriteria[_i2]),
-      conditions: ['CampaignStatus = ENABLED', 'CampaignName CONTAINS_IGNORE_CASE "display"', 'Clicks > 0', 'Conversions <= ' + conversionThreshold],
-      dateRange: 'LAST_30_DAYS'
-    }).ortb({
-      minBid: minDisplayBid,
-      maxBid: maxDisplayBid,
-      statsDuration: 30
-    });
-
-    // Randomize for entities with no clicks 2x/day
-    if (hourOfDay === hourToRandomize) {
-      new Bidder({
-        entity: eval(displayBidCriteria[_i2]),
-        conditions: ['CampaignStatus = ENABLED', 'CampaignName CONTAINS_IGNORE_CASE "display"', 'Clicks = 0'],
-        dateRange: 'LAST_30_DAYS'
-      }).randomize({
-        minBid: minDisplayBid,
-        maxBid: maxDisplayBid
-      });
-    }
-  }
+  accountSelector.executeInParallel('runTest', 'buildEmail');
 }
 
 main();
+runTest();
+buildEmail();

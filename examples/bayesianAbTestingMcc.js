@@ -43,13 +43,7 @@ const runTest = function() {
   // Build an array of ads in the account
   let ads = new Iterator({
     entity: AdWordsApp.ads(),
-    conditions: [
-      'CampaignStatus = ENABLED',
-      'AdGroupStatus = ENABLED',
-      'Status = ENABLED',
-      'CampaignName CONTAINS_IGNORE_CASE "Search"',
-      minImpressions
-    ],
+    conditions: ['Status = ENABLED','CampaignName CONTAINS_IGNORE_CASE "Search"', minImpressions],
     dateRange: dateRange,
   }).toArray({
     ad(){ return this; },

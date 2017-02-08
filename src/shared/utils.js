@@ -47,6 +47,10 @@ export function isUndefined(elem) {
   return getType(elem) === 'Undefined';
 }
 
+export function isEmpty(elem) {
+  return elem === '';
+}
+
 export function checkType(elem, isType, message) {
   return isType(elem) ? elem : logError(`Expected ${isType.name.slice(2)} but received ${getType(elem)} ${message}`);
 }
