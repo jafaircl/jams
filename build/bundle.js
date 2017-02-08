@@ -114,7 +114,6 @@ function isNumber(arg) {
   return typeof arg === "number" && arg === arg;
 }
 
-// Converts the jStat matrix to vector.
 function retZero() {
   return 0;
 }
@@ -2044,6 +2043,14 @@ jStat.prototype.weibull = new j$Weibull();
 
 var j$ = new jStat();
 
+/*
+ * Bayesian A/B Testing
+ * ---
+ * @param {number} alphaA - The number of successes for A
+ * @param {number} betaA - The number of failures for A
+ * @param {number} alphaB - The number of successes for B
+ * @param {number} betaB - The number of failures for B
+ */
 function bayesianTest(alphaA, betaA, alphaB, betaB) {
   alphaA += 1;
   betaA += 1;
@@ -2111,6 +2118,12 @@ function isArray$1(elem) {
 
 // Error handling
 
+/*
+ * Add A Label To An Account
+ * ---
+ * @param {string} labelName - A name for the label
+ * @param {string} labelColor - A hex color for the label.
+ */
 function addLabel(labelName, labelColor) {
 
   var labelIterator = AdWordsApp.labels().withCondition('Name = "' + labelName + '"').get();
