@@ -114,6 +114,7 @@ function isNumber(arg) {
   return typeof arg === "number" && arg === arg;
 }
 
+// Converts the jStat matrix to vector.
 function retZero() {
   return 0;
 }
@@ -2043,14 +2044,6 @@ jStat.prototype.weibull = new j$Weibull();
 
 var j$ = new jStat();
 
-/*
- * Bayesian A/B Testing
- * ---
- * @param {number} alphaA - The number of successes for A
- * @param {number} betaA - The number of failures for A
- * @param {number} alphaB - The number of successes for B
- * @param {number} betaB - The number of failures for B
- */
 function bayesianTest(alphaA, betaA, alphaB, betaB) {
   alphaA += 1;
   betaA += 1;
@@ -2086,13 +2079,9 @@ function bayesianDecision(alphaA, betaA, alphaB, betaB) {
 }
 
 // Type checking
-function getType(elem) {
-  return Object.prototype.toString.call(elem).slice(8, -1);
-}
 
-function isArray$1(elem) {
-  return getType(elem) === 'Array';
-}
+
+
 
 
 
@@ -2118,12 +2107,6 @@ function isArray$1(elem) {
 
 // Error handling
 
-/*
- * Add A Label To An Account
- * ---
- * @param {string} labelName - A name for the label
- * @param {string} labelColor - A hex color for the label.
- */
 function addLabel(labelName, labelColor) {
 
   var labelIterator = AdWordsApp.labels().withCondition('Name = "' + labelName + '"').get();
@@ -2137,7 +2120,14 @@ function addLabel(labelName, labelColor) {
  * ---
  * @param {string} contains - A unique text string for all the labesl to delete.
  */
+function deleteLabel(contains) {
 
+  var labelIterator = AdWordsApp.labels().withCondition('LabelName CONTAINS "' + contains + '"').get();
+  while (labelIterator.hasNext()) {
+    var labelName = labelIterator.next();
+    labelName.remove();
+  }
+}
 
 /*
  * Remove Labels From An Entity
@@ -2145,22 +2135,6 @@ function addLabel(labelName, labelColor) {
  * @param {string} labelName - A name for the label
  * @param {string} entity - An entity from which to remove labels
  */
-function removeLabelFrom(entity, labelNames) {
-  var labelString = isArray$1(labelNames) ? labelNames.join('","') : labelNames;
-
-  new Iterator({
-    entity: entity,
-    conditions: ['LabelNames CONTAINS_ANY ["' + labelString + '"]']
-  }).run(function () {
-    if (isArray$1(labelNames)) {
-      for (var i in labelNames) {
-        this.removeLabel(labelNames[i]);
-      }
-    } else {
-      this.removeLabel(labelNames);
-    }
-  });
-}
 
 function addTableRow(arr) {
   var tag = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'td';
@@ -2206,7 +2180,7 @@ var HtmlTable = function () {
   return HtmlTable;
 }();
 
-var tableStyle = '\n  * {\n    margin: 0;\n    padding: 0;\n    box-sizing: border-box;\n  }\n\n  body {\n    margin-top: 12px;\n    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;\n    color: #333;\n  }\n\n  table {\n    text-align: left;\n    font-size: 13px;\n    line-height: 24px;\n    border-collapse: separate;\n    border-spacing: 0;\n    border: 2px solid #E88F47;\n    margin: 12px 0 12px 24px;\n    border-radius: .25rem;\n  }\n\n  thead tr:first-child {\n    background: rgb(232,143,71);\n    color: #fff;\n    border: none;\n  }\n\n  th:first-child, td:first-child { padding: 0 15px 0 20px; }\n\n  thead tr:last-child th { border-bottom: 3px solid #ddd; }\n\n  tbody tr:hover { background-color: rgba(100,154,166,.1); cursor: default; }\n  tbody tr:last-child td { border: none; }\n  tbody td {\n    padding-right: 24px;\n    border-bottom: 1px solid #ddd;\n  }\n';
+var tableStyle = '\n  * {\n    margin: 0;\n    padding: 0;\n    box-sizing: border-box;\n  }\n\n  body {\n    margin-top: 12px;\n    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;\n    color: #333;\n  }\n\n  table {\n    table-layout: fixed;\n    text-align: left;\n    font-size: 13px;\n    line-height: 24px;\n    border-collapse: separate;\n    border-spacing: 0;\n    border: 2px solid #E88F47;\n    margin: 24px auto;\n    width: 80%;\n    border-radius: .25rem;\n  }\n\n  thead tr:first-child {\n    background: rgb(232,143,71);\n    color: #fff;\n    border: none;\n  }\n\n  th:first-child, td:first-child { padding: 0 15px 0 20px; }\n\n  thead tr:last-child th { border-bottom: 3px solid #ddd; }\n\n  tbody tr:hover { background-color: rgba(100,154,166,.1); cursor: default; }\n  tbody tr:last-child td { border: none; }\n  tbody td {\n    padding-right: 24px;\n    border-bottom: 1px solid #ddd;\n  }\n';
 /*
 
   td:last-child {
@@ -2215,20 +2189,33 @@ var tableStyle = '\n  * {\n    margin: 0;\n    padding: 0;\n    box-sizing: bord
   }
   */
 
-// Ad conditions
-var minImpressions = 'Impressions > 100';
+var adConditions = ['CampaignStatus = ENABLED', 'AdGroupStatus = ENABLED', 'Status = ENABLED', 'CampaignName CONTAINS_IGNORE_CASE "Search"', 'Impressions > 100'];
 var dateRange = 'ALL_TIME';
 
 // Testing variables
 var conversionsGreaterThan = 0;
 var decisionThreshold = 0.002;
-var probabilityThreshold = 0.8;
+var probabilityThreshold = 0.9;
 
 // Labels
-var controlAdLabel = 'Control Ad';
-var winningAdLabel = 'Winning Ad';
-var losingAdLabel = 'Losing Ad';
-var testingAdLabel = 'Test In Progress';
+var labels = {
+  control: {
+    name: 'Control Ad',
+    color: '#4CAF50'
+  },
+  winning: {
+    name: 'Winning Ad',
+    color: '#2196F3'
+  },
+  losing: {
+    name: 'Losing Ad',
+    color: '#F44336'
+  },
+  testing: {
+    name: 'Test In Progress',
+    color: '#FFC107'
+  }
+};
 
 // Email
 var emailRecipient = 'jfaircloth@cocg.co';
@@ -2236,14 +2223,16 @@ var accountLabel = 'Jonathan';
 
 var runTest = function runTest() {
 
-  // Create the labels if they don't exist
-  addLabel(controlAdLabel, '#4CAF50');
-  addLabel(winningAdLabel, '#2196F3');
-  addLabel(losingAdLabel, '#F44336');
-  addLabel(testingAdLabel, '#FFC107');
+  // Initialize the labels
+  for (var i in labels) {
+    // Remove each label from the account entirely.
+    // This is faster than removing each label from individual ads.
+    // As long as your labels are unique to this test, it should not matter.
+    deleteLabel(labels[i].name);
 
-  // Remove labels from ads
-  removeLabelFrom(AdWordsApp.ads(), [controlAdLabel, winningAdLabel, losingAdLabel, testingAdLabel]);
+    // Add them back. They should not be assigned to any ad now.
+    addLabel(labels[i].name, labels[i].color);
+  }
 
   // Start an email table
   var table = new HtmlTable({
@@ -2255,7 +2244,7 @@ var runTest = function runTest() {
   // Build an array of ads in the account
   var ads = new Iterator({
     entity: AdWordsApp.ads(),
-    conditions: ['CampaignStatus = ENABLED', 'AdGroupStatus = ENABLED', 'Status = ENABLED', 'CampaignName CONTAINS_IGNORE_CASE "Search"', minImpressions],
+    conditions: adConditions,
     dateRange: dateRange
   }).toArray({
     ad: function ad() {
@@ -2283,10 +2272,10 @@ var runTest = function runTest() {
     }
   });
 
-  var _loop = function _loop(i) {
+  var _loop = function _loop(_i) {
     // Filter the array for ads in the same ad group
     var group = ads.filter(function (ad) {
-      return ad.adGroupId === ads[i].adGroupId;
+      return ad.adGroupId === ads[_i].adGroupId;
     });
 
     // Sort the group by impressions in descending order
@@ -2298,7 +2287,7 @@ var runTest = function runTest() {
     if (group.length > 1) {
 
       // Apply label to control ad
-      group[0].ad.applyLabel(controlAdLabel);
+      group[0].ad.applyLabel(labels.control.name);
 
       // Skip the first ad so we can use it as a control
       for (var j = 1; j < group.length; j += 1) {
@@ -2314,32 +2303,34 @@ var runTest = function runTest() {
           alphaB = group[j].stats.conversions;
           betaB = group[j].stats.clicks - alphaB;
 
-          // Otherwise, use click through rate
-        } else {
+          // Otherwise, use click through rate. Make sure at least one has a click
+        } else if (group[0].stats.clicks > 0 || group[j].stats.clicks > 0) {
           alphaA = group[0].stats.clicks;
           betaA = group[0].stats.impressions - alphaA;
           alphaB = group[j].stats.clicks;
           betaB = group[j].stats.impressions - alphaB;
+        } else {
+          continue;
         }
 
         // Get the probability
         var test = bayesianTest(alphaA, betaA, alphaB, betaB);
-        // Check against decision threshould
+        // Check against decision threshould 
         var decision = bayesianDecision(alphaA, betaA, alphaB, betaB);
 
         // Condition: B > A and clears both thresholds
         if (decision < decisionThreshold && test > probabilityThreshold) {
-          group[j].ad.applyLabel(winningAdLabel);
+          group[j].ad.applyLabel(labels.winning.name);
           table.addRow([group[j].campaignName, group[j].adGroupName, (test * 100).toFixed(2) + '%', (decision * 100).toFixed(2) + '%']);
 
           // Condition: A > B and clears both thresholds
         } else if (decision < decisionThreshold && test < 1 - probabilityThreshold) {
-          group[j].ad.applyLabel(losingAdLabel);
+          group[j].ad.applyLabel(labels.losing.name);
           table.addRow([group[j].campaignName, group[j].adGroupName, (test * 100).toFixed(2) + '%', (decision * 100).toFixed(2) + '%']);
 
           // Condition: Either decision or probability threshold is not met
         } else {
-          group[j].ad.applyLabel(testingAdLabel);
+          group[j].ad.applyLabel(labels.testing.name);
         }
 
         // Get the index of the tested ad & remove it so we don't keep testing it
@@ -2348,8 +2339,8 @@ var runTest = function runTest() {
     }
   };
 
-  for (var i in ads) {
-    _loop(i);
+  for (var _i in ads) {
+    _loop(_i);
   }
 
   table.close();

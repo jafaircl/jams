@@ -1,22 +1,42 @@
 import { Iterator } from './shared/iterator';
 import { bayesianTest, bayesianDecision } from './shared/statistics';
-import { addLabel, removeLabelFrom } from './shared/labels';
+import { addLabel, deleteLabel } from './shared/labels';
 import { HtmlTable, tableStyle } from './shared/email';
 
 // Ad conditions
-const minImpressions = 'Impressions > 100';
+const adConditions = [
+  'CampaignStatus = ENABLED',
+  'AdGroupStatus = ENABLED',
+  'Status = ENABLED',
+  'CampaignName CONTAINS_IGNORE_CASE "Search"',
+  'Impressions > 100'
+];
 const dateRange = 'ALL_TIME';
 
 // Testing variables
 const conversionsGreaterThan = 0;
 const decisionThreshold = 0.002;
-const probabilityThreshold = 0.8;
+const probabilityThreshold = 0.9;
 
 // Labels
-const controlAdLabel = 'Control Ad';
-const winningAdLabel = 'Winning Ad';
-const losingAdLabel = 'Losing Ad';
-const testingAdLabel = 'Test In Progress';
+const labels = {
+  control: {
+    name: 'Control Ad',
+    color: '#4CAF50'
+  },
+  winning: {
+    name: 'Winning Ad',
+    color: '#2196F3'
+  },
+  losing: {
+    name: 'Losing Ad',
+    color: '#F44336'
+  },
+  testing: {
+    name: 'Test In Progress',
+    color: '#FFC107'
+  },
+};
 
 // Email
 const emailRecipient = 'jfaircloth@cocg.co';
@@ -24,14 +44,16 @@ const accountLabel = 'Jonathan';
 
 const runTest = function() {
   
-  // Create the labels if they don't exist
-  addLabel(controlAdLabel, '#4CAF50');
-  addLabel(winningAdLabel, '#2196F3');
-  addLabel(losingAdLabel, '#F44336');
-  addLabel(testingAdLabel, '#FFC107');
-  
-  // Remove labels from ads
-  removeLabelFrom(AdWordsApp.ads(), [controlAdLabel, winningAdLabel, losingAdLabel, testingAdLabel]);
+  // Initialize the labels
+  for(let i in labels){
+    // Remove each label from the account entirely.
+    // This is faster than removing each label from individual ads.
+    // As long as your labels are unique to this test, it should not matter.
+    deleteLabel(labels[i].name);
+    
+    // Add them back. They should not be assigned to any ad now.
+    addLabel(labels[i].name, labels[i].color);
+  }
   
   // Start an email table
   let table = new HtmlTable({
@@ -43,13 +65,7 @@ const runTest = function() {
   // Build an array of ads in the account
   let ads = new Iterator({
     entity: AdWordsApp.ads(),
-    conditions: [
-      'CampaignStatus = ENABLED',
-      'AdGroupStatus = ENABLED',
-      'Status = ENABLED',
-      'CampaignName CONTAINS_IGNORE_CASE "Search"',
-      minImpressions
-    ],
+    conditions: adConditions,
     dateRange: dateRange,
   }).toArray({
     ad(){ return this; },
@@ -82,7 +98,7 @@ const runTest = function() {
     if (group.length > 1){
       
       // Apply label to control ad
-      group[0].ad.applyLabel(controlAdLabel);
+      group[0].ad.applyLabel(labels.control.name);
       
       // Skip the first ad so we can use it as a control
       for(let j = 1; j < group.length; j += 1){
@@ -95,32 +111,36 @@ const runTest = function() {
           alphaB = group[j].stats.conversions;
           betaB = group[j].stats.clicks - alphaB;
           
-        // Otherwise, use click through rate
-        } else {
+        // Otherwise, use click through rate. Make sure at least one has a click
+        } else if(group[0].stats.clicks > 0 || group[j].stats.clicks > 0){
           alphaA = group[0].stats.clicks;
           betaA = group[0].stats.impressions - alphaA;
           alphaB = group[j].stats.clicks;
           betaB = group[j].stats.impressions - alphaB;
+        } else {
+          continue;
         }
         
         // Get the probability
         let test = bayesianTest(alphaA, betaA, alphaB, betaB);
-        // Check against decision threshould
+        // Check against decision threshould 
         let decision = bayesianDecision(alphaA, betaA, alphaB, betaB);
         
-        // Condition: B > A and clears both thresholds
-        if (decision < decisionThreshold && test > probabilityThreshold){
-          group[j].ad.applyLabel(winningAdLabel);
+         // Condition: B > A and clears both thresholds
+        if (decision < decisionThreshold 
+            && test > probabilityThreshold){
+          group[j].ad.applyLabel(labels.winning.name);
           table.addRow([group[j].campaignName, group[j].adGroupName, (test * 100).toFixed(2) + '%', (decision * 100).toFixed(2) + '%']);
           
         // Condition: A > B and clears both thresholds
-        } else if (decision < decisionThreshold && test < 1 - probabilityThreshold){
-          group[j].ad.applyLabel(losingAdLabel);
+        } else if (decision < decisionThreshold
+                   && test < 1 - probabilityThreshold){
+          group[j].ad.applyLabel(labels.losing.name);
           table.addRow([group[j].campaignName, group[j].adGroupName, (test * 100).toFixed(2) + '%', (decision * 100).toFixed(2) + '%']);
           
         // Condition: Either decision or probability threshold is not met
         } else {
-          group[j].ad.applyLabel(testingAdLabel);
+          group[j].ad.applyLabel(labels.testing.name);
         }
         
         // Get the index of the tested ad & remove it so we don't keep testing it
@@ -157,6 +177,6 @@ function main() {
   accountSelector.executeInParallel('runTest', 'buildEmail');
 }
 
-main();
+main(); 
 runTest();
 buildEmail();

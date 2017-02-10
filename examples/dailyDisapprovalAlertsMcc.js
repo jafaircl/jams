@@ -99,7 +99,7 @@ const checkKeywords = function(){
   return localSendEmail === true ?  table.html : '';
 };
 
-const main = function() {
+(function main() {
   for ( let label in emailAddresses ) {
     let emailBody = '';
     let accountIterator = MccApp.accounts()
@@ -126,7 +126,4 @@ const main = function() {
       });
     }
   }
-};
-
-
-main();
+})();

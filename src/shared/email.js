@@ -59,13 +59,15 @@ export const tableStyle = `
   }
 
   table {
+    table-layout: fixed;
     text-align: left;
     font-size: 13px;
     line-height: 24px;
     border-collapse: separate;
     border-spacing: 0;
     border: 2px solid #E88F47;
-    margin: 12px 0 12px 24px;
+    margin: 24px auto;
+    width: 80%;
     border-radius: .25rem;
   }
 
