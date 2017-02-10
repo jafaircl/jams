@@ -29,7 +29,7 @@ To build & watch for changes in development, cd to the directory and use:
 npm run watch
 ```
 
-To build in prodution (minified with uglify) use:
+To build with minification via uglify, use:
 
 ```sh
 npm run minify
@@ -52,6 +52,8 @@ One of rollup's features is tree shaking. Any functions that are not called will
 Build an iterator and run through it normally:
 
 ```javascript
+import { Iterator } from './shared/iterator';
+
 const conditions = ['Impressions > 100', 'Clicks > 0'];
 const dateRange = 'LAST_30_DAYS';
 
@@ -71,6 +73,8 @@ while(ads.hasNext()){
 Quickly build and start iterating. "this" is set to the next item in the iterator:
 
 ```javascript
+import { Iterator } from './shared/iterator';
+
 new Iterator({
   entity: AdWordsApp.keywords(),
   conditions: ['Impressions > 100', 'Clicks > 0'],
@@ -80,26 +84,85 @@ new Iterator({
 });
 ```
 
-Turn the iterator into an array:
+Turn the iterator into an array. This can keep you from traversing the hierarchy, slowing down your script. Consider the following code which logs an array of information about ads in an ad group:
 
 ```javascript
-const conditions = ['Impressions > 100', 'Clicks > 0'];
+function main(){
+  var adGroupSelector = AdWordsApp.adGroups()
+  .withCondition("Impressions > 0")
+  .forDateRange("LAST_30_DAYS");
+
+  var adGroupIterator = adGroupSelector.get();
+  while (adGroupIterator.hasNext()) {
+    var adGroup = adGroupIterator.next();
+    var adGroupId = adGroup.getId();
+    var adsIterator = adGroup.ads()
+    .withCondition("Impressions > 0")
+    .forDateRange("LAST_30_DAYS")
+    .orderBy("Impressions DESC")
+    .get();
+    var arr = [];
+    
+    while (adsIterator.hasNext()){
+      var ad = adsIterator.next();
+      var stats = ad.getStatsFor('LAST_30_DAYS');
+
+      arr.push({
+        id: ad.getId(),
+        adGroupId: adGroupId,
+        stats: {
+          clicks: stats.getClicks(),
+          impressions: stats.getImpressions()
+        }
+      })
+    }
+    Logger.log(arr);
+  }
+}
+```
+
+On a small test account, this takes 1:35 to run and log 144 rows of data. Now, consider the following code:
+
+```javascript
+import { Iterator } from './shared/iterator';
+
+const conditions = ['Impressions > 0'];
 const dateRange = 'LAST_30_DAYS';
 
-let ads = new Iterator({
-  entity: AdWordsApp.ads(),
-  conditions: conditions,
-  dateRange: dateRange,
-}).toArray({
-  ad(){ return this; },
-  id(){ return this.getId(); },
-  stats(){ 
-    let stats = this.getStatsFor(dateRange);
-    return {
-      clicks: stats.getClicks(),
-      conversions: stats.getConversions(),
-      impressions: stats.getImpressions()
-    };
-  },
-});
+(function main(){
+  let ads = new Iterator({
+    entity: AdWordsApp.ads(),
+    conditions: conditions,
+    dateRange: dateRange,
+  }).toArray({
+    id(){ return this.getId(); },
+    adGroupId(){ return this.getAdGroup().getId(); },
+    stats(){ 
+      let stats = this.getStatsFor(dateRange);
+      return {
+        clicks: stats.getClicks(),
+        impressions: stats.getImpressions()
+      };
+    },
+  });
+
+  for(let i in ads){
+    // Filter the array for ads in the same ad group
+    let group = ads.filter(ad => ad.adGroupId === ads[i].adGroupId);
+
+    // Sort the group by impressions in descending order
+    group.sort((a, b) => b.stats.impressions - a.stats.impressions);
+    
+    Logger.log(group);
+    
+    for(let j in group){
+      
+      
+      // Get the index of the logged ad & remove it so we don't keep logging the same ad groups
+      ads.splice(ads.indexOf(group[j]), 1);
+    }
+  }
+})();
 ```
+
+On the same account, this takes 19 seconds.

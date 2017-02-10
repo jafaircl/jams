@@ -98,7 +98,7 @@ const runTest = function() {
     if (group.length > 1){
       
       // Apply label to control ad
-      group[0].ad.applyLabel(controlAdLabel);
+      group[0].ad.applyLabel(labels.control.name);
       
       // Skip the first ad so we can use it as a control
       for(let j = 1; j < group.length; j += 1){
@@ -111,26 +111,30 @@ const runTest = function() {
           alphaB = group[j].stats.conversions;
           betaB = group[j].stats.clicks - alphaB;
           
-        // Otherwise, use click through rate
-        } else {
+        // Otherwise, use click through rate. Make sure at least one has a click
+        } else if(group[0].stats.clicks > 0 || group[j].stats.clicks > 0){
           alphaA = group[0].stats.clicks;
           betaA = group[0].stats.impressions - alphaA;
           alphaB = group[j].stats.clicks;
           betaB = group[j].stats.impressions - alphaB;
+        } else {
+          continue;
         }
         
         // Get the probability
         let test = bayesianTest(alphaA, betaA, alphaB, betaB);
-        // Check against decision threshould
+        // Check against decision threshould 
         let decision = bayesianDecision(alphaA, betaA, alphaB, betaB);
         
          // Condition: B > A and clears both thresholds
-        if (decision < decisionThreshold && test > probabilityThreshold && (test * 100).toFixed(2) !== 0.00){
+        if (decision < decisionThreshold 
+            && test > probabilityThreshold){
           group[j].ad.applyLabel(labels.winning.name);
           table.addRow([group[j].campaignName, group[j].adGroupName, (test * 100).toFixed(2) + '%', (decision * 100).toFixed(2) + '%']);
           
         // Condition: A > B and clears both thresholds
-        } else if (decision < decisionThreshold && test < 1 - probabilityThreshold){
+        } else if (decision < decisionThreshold
+                   && test < 1 - probabilityThreshold){
           group[j].ad.applyLabel(labels.losing.name);
           table.addRow([group[j].campaignName, group[j].adGroupName, (test * 100).toFixed(2) + '%', (decision * 100).toFixed(2) + '%']);
           
@@ -173,6 +177,6 @@ function main() {
   accountSelector.executeInParallel('runTest', 'buildEmail');
 }
 
-main();
+main(); 
 runTest();
 buildEmail();
