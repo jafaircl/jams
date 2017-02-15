@@ -3,7 +3,7 @@ import { Iterator } from './shared/iterator';
 const conditions = ['Impressions > 0'];
 const dateRange = 'LAST_30_DAYS';
 
-(function main(){
+function main(){
   let ads = new Iterator({
     entity: AdWordsApp.ads(),
     conditions: conditions,
@@ -19,21 +19,19 @@ const dateRange = 'LAST_30_DAYS';
       };
     },
   });
-
-  for(let i in ads){
+  
+  // Loop backwards so filtering the ads doesn't mess up indexing
+  let i = ads.length - 1;
+  for(i; i >= 0; i = ads.length - 1){
+    
     // Filter the array for ads in the same ad group
     let group = ads.filter(ad => ad.adGroupId === ads[i].adGroupId);
 
-    // Sort the group by impressions in descending order
-    group.sort((a, b) => b.stats.impressions - a.stats.impressions);
+    Logger.log(group[0].adGroupId);
     
-    Logger.log(group);
-    
-    for(let j in group){
-      
-      
-      // Get the index of the logged ad & remove it so we don't keep logging the same ad groups
-      ads.splice(ads.indexOf(group[j]), 1);
-    }
+    // Filter out the ads in this ad group from the main array
+    ads = ads.filter(ad => ad.adGroupId !== ads[i].adGroupId);
   }
-})();
+}
+
+main();

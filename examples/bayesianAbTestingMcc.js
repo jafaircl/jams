@@ -8,7 +8,7 @@ const adConditions = [
   'CampaignStatus = ENABLED',
   'AdGroupStatus = ENABLED',
   'Status = ENABLED',
-  'CampaignName CONTAINS_IGNORE_CASE "Search"',
+  'Type NOT_IN [IMAGE_AD, HTML5_AD, MOBILE_IMAGE_AD]',
   'Impressions > 100'
 ];
 const dateRange = 'ALL_TIME';
@@ -83,19 +83,18 @@ const runTest = function() {
     },
   });
   
-  for(let i in ads){
+  // Loop backwards so filtering the ads doesn't mess up indexing
+  let i = ads.length - 1;
+  for(i; i >= 0; i = ads.length - 1){
     // Filter the array for ads in the same ad group
-    let group = ads.filter(function(ad){
-      return ad.adGroupId === ads[i].adGroupId;
-    });
+    let group = ads.filter(ad => ad.adGroupId === ads[i].adGroupId);
     
-    // Sort the group by impressions in descending order
-    group.sort(function(a, b){
-      return b.stats.impressions - a.stats.impressions;
-    });
     
     // Check to make sure there are at least 2 ads
     if (group.length > 1){
+      
+      // Sort the group by impressions in descending order
+      group.sort((a, b) => b.stats.impressions - a.stats.impressions);
       
       // Apply label to control ad
       group[0].ad.applyLabel(labels.control.name);
@@ -142,11 +141,10 @@ const runTest = function() {
         } else {
           group[j].ad.applyLabel(labels.testing.name);
         }
-        
-        // Get the index of the tested ad & remove it so we don't keep testing it
-        ads.splice(ads.indexOf(group[j]), 1);
       }
     }
+    // Filter out the ads in this ad group from the main array
+    ads = ads.filter(ad => ad.adGroupId !== ads[i].adGroupId);
   }
   
   table.close();

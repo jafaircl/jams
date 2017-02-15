@@ -102,7 +102,7 @@ var Iterator = function () {
 var conditions = ['Impressions > 0'];
 var dateRange = 'LAST_30_DAYS';
 
-(function main() {
+function main() {
   var ads = new Iterator({
     entity: AdWordsApp.ads(),
     conditions: conditions,
@@ -123,27 +123,22 @@ var dateRange = 'LAST_30_DAYS';
     }
   });
 
-  var _loop = function _loop(i) {
+  // Loop backwards so filtering the ads doesn't mess up indexing
+  var i = ads.length - 1;
+  for (i; i >= 0; i = ads.length - 1) {
+
     // Filter the array for ads in the same ad group
     var group = ads.filter(function (ad) {
       return ad.adGroupId === ads[i].adGroupId;
     });
 
-    // Sort the group by impressions in descending order
-    group.sort(function (a, b) {
-      return b.stats.impressions - a.stats.impressions;
+    Logger.log(group[0].adGroupId);
+
+    // Filter out the ads in this ad group from the main array
+    ads = ads.filter(function (ad) {
+      return ad.adGroupId !== ads[i].adGroupId;
     });
-
-    Logger.log(group);
-
-    for (var j in group) {
-
-      // Get the index of the logged ad & remove it so we don't keep logging the same ad groups
-      ads.splice(ads.indexOf(group[j]), 1);
-    }
-  };
-
-  for (var i in ads) {
-    _loop(i);
   }
-})();
+}
+
+main();

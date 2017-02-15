@@ -45,6 +45,18 @@ One of rollup's features is tree shaking. Any functions that are not called will
 })();
 ```
 
+But, in some cases, IIFEs can cause a script to miss iterations. So, the safest way to make sure you function remains in your bundled output is to call it then remove the call when you move your script to AdWords.
+
+```javascript
+function main(){
+
+  // your code
+
+}
+
+main(); // remove this from your bundled output
+```
+
 ## Usage
 
 ### Iterators
@@ -116,12 +128,12 @@ function main(){
         }
       })
     }
-    Logger.log(arr);
+    Logger.log(arr[0]['adGroupId']);
   }
 }
 ```
 
-On a small test account, this takes 1:35 to run and log 144 rows of data. Now, consider the following code:
+On a test account where there are 400 ad groups and 649 ads that meet this criteria, the above takes 4:57 (297 seconds) to run. That's 1/6 of your allotted run time without even doing anything to the ads you fetched. Now, consider the following code:
 
 ```javascript
 import { Iterator } from './shared/iterator';
@@ -129,7 +141,7 @@ import { Iterator } from './shared/iterator';
 const conditions = ['Impressions > 0'];
 const dateRange = 'LAST_30_DAYS';
 
-(function main(){
+function main(){
   let ads = new Iterator({
     entity: AdWordsApp.ads(),
     conditions: conditions,
@@ -145,24 +157,20 @@ const dateRange = 'LAST_30_DAYS';
       };
     },
   });
-
-  for(let i in ads){
+  
+  // Loop backwards so filtering the ads doesn't mess up indexing
+  let i = ads.length - 1;
+  for(i; i >= 0; i = ads.length - 1){
+    
     // Filter the array for ads in the same ad group
     let group = ads.filter(ad => ad.adGroupId === ads[i].adGroupId);
 
-    // Sort the group by impressions in descending order
-    group.sort((a, b) => b.stats.impressions - a.stats.impressions);
+    Logger.log(group[0].adGroupId);
     
-    Logger.log(group);
-    
-    for(let j in group){
-      
-      
-      // Get the index of the logged ad & remove it so we don't keep logging the same ad groups
-      ads.splice(ads.indexOf(group[j]), 1);
-    }
+    // Filter out the ads in this ad group from the main array
+    ads = ads.filter(ad => ad.adGroupId !== ads[i].adGroupId);
   }
-})();
+}
 ```
 
-On the same account, this takes 19 seconds.
+On the same account, this takes 44 seconds which is 85% faster. On large accounts, the time savings could be the difference between your script timing out or not.
