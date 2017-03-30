@@ -14,6 +14,8 @@ export default {
       jsnext: true,
       main: true,
       browser: true,
+      extensions: [ '.js', '.json' ],
+      preferBuiltins: false
     }),
     commonjs(),
     babel({

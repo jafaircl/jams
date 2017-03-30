@@ -1,4 +1,4 @@
-import { Iterator } from './shared/iterator';
+import { Iterator } from './core/iterator';
 import { htmlTable, tableStyle } from './shared/email';
 
 function main () {

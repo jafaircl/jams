@@ -62,18 +62,6 @@ var Iterator = function () {
         logic.call(this.iterator.next());
       }
     }
-
-    /*
-    let keywords = new Iterator({
-      entity: AdWordsApp.keywords(),
-      conditions: keywordConditions,
-      dateRange: dateRange
-    }).toArray({
-      adGroupId(){ return this.getAdGroup().getId(); },
-      text(){ return this.getText(); },
-    });
-    */
-
   }, {
     key: 'toArray',
     value: function toArray$$1(input) {
@@ -98,47 +86,3 @@ var Iterator = function () {
   }]);
   return Iterator;
 }();
-
-var conditions = ['Impressions > 0'];
-var dateRange = 'LAST_30_DAYS';
-
-function main() {
-  var ads = new Iterator({
-    entity: AdWordsApp.ads(),
-    conditions: conditions,
-    dateRange: dateRange
-  }).toArray({
-    id: function id() {
-      return this.getId();
-    },
-    adGroupId: function adGroupId() {
-      return this.getAdGroup().getId();
-    },
-    stats: function stats() {
-      var stats = this.getStatsFor(dateRange);
-      return {
-        clicks: stats.getClicks(),
-        impressions: stats.getImpressions()
-      };
-    }
-  });
-
-  // Loop backwards so filtering the ads doesn't mess up indexing
-  var i = ads.length - 1;
-  for (i; i >= 0; i = ads.length - 1) {
-
-    // Filter the array for ads in the same ad group
-    var group = ads.filter(function (ad) {
-      return ad.adGroupId === ads[i].adGroupId;
-    });
-
-    Logger.log(group[0].adGroupId);
-
-    // Filter out the ads in this ad group from the main array
-    ads = ads.filter(function (ad) {
-      return ad.adGroupId !== ads[i].adGroupId;
-    });
-  }
-}
-
-main();

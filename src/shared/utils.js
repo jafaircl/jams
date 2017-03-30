@@ -64,3 +64,20 @@ export function logError(message) {
   }
   Logger.log(`Jams Error: ${message}`);
 }
+
+// Remove duplicates from an array
+export function deDuplicate(arr) {
+  let hashTable = {};
+
+  return arr.filter(function (el) {
+    let key = JSON.stringify(el);
+    let match = Boolean(hashTable[key]);
+
+    return (match ? false : hashTable[key] = true);
+  });
+}
+
+// Sort an object by one of its properties
+export function sortObject(obj, fn){
+  
+}

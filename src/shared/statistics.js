@@ -39,8 +39,8 @@ export function bayesianDecision(alphaA, betaA, alphaB, betaB) {
 
   let h1 = 1 - bayesianTest((alphaA + 1), betaA, alphaB, betaB),
     h2 = 1 - bayesianTest(alphaA, betaA, (alphaB + 1), betaB),
-    b1 = Math.exp(j$.betaln((alphaA + 1), betaA) - j$.betaln(alphaA, betaA)),
-    b2 = Math.exp(j$.betaln((alphaB + 1), betaB) - j$.betaln(alphaB, betaB));
+    b1 = Math.exp(j$.betaln((alphaA + 2), betaA + 1) - j$.betaln(alphaA + 1, betaA + 1)),
+    b2 = Math.exp(j$.betaln((alphaB + 2), betaB + 1) - j$.betaln(alphaB + 1, betaB + 1));
 
   return (b1 * h1) - (b2 * h2);
 }

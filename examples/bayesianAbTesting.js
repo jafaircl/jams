@@ -1,4 +1,4 @@
-import { Iterator } from './shared/iterator';
+import { Iterator } from './core/iterator';
 import { bayesianTest, bayesianDecision } from './shared/statistics';
 import { addLabel, deleteLabel } from './shared/labels';
 import { HtmlTable, tableStyle } from './shared/email';

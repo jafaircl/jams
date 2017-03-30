@@ -80,18 +80,13 @@ export const tableStyle = `
   th:first-child, td:first-child { padding: 0 15px 0 20px; }
 
   thead tr:last-child th { border-bottom: 3px solid #ddd; }
+  thead a {color: #FFF;}
 
   tbody tr:hover { background-color: rgba(100,154,166,.1); cursor: default; }
   tbody tr:last-child td { border: none; }
-  tbody td {
+  tbody td, tbody th {
     padding-right: 24px;
     border-bottom: 1px solid #ddd;
   }
+  tbody th { font-weight: bold; }
 `;
-/*
-
-  td:last-child {
-    text-align: center;
-    padding-right: 10px;
-  }
-  */

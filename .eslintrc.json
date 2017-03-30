@@ -12,6 +12,7 @@
         "Logger": true,
         "MailApp": true,
         "MccApp": true,
+        "MimeType": true,
         "SpreadsheetApp": true,
         "UrlFetchApp": true,
         "Utilities": true,

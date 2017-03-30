@@ -1,22 +1,23 @@
-import { Iterator } from './shared/iterator';
+import { Iterator } from './core/iterator';
 import { bayesianTest, bayesianDecision } from './shared/statistics';
 import { addLabel, deleteLabel } from './shared/labels';
 import { HtmlTable, tableStyle } from './shared/email';
+
+// Testing variables
+const impressionsThreshold = 100;
+const conversionsGreaterThan = 0;
+const decisionThreshold = 0.002;
+const probabilityThreshold = 0.9;
 
 // Ad conditions
 const adConditions = [
   'CampaignStatus = ENABLED',
   'AdGroupStatus = ENABLED',
   'Status = ENABLED',
-  'Type NOT_IN [IMAGE_AD, HTML5_AD, MOBILE_IMAGE_AD]',
-  'Impressions > 100'
+  'CampaignName CONTAINS_IGNORE_CASE "(Search)"',
+  'Impressions > ' + impressionsThreshold
 ];
 const dateRange = 'ALL_TIME';
-
-// Testing variables
-const conversionsGreaterThan = 0;
-const decisionThreshold = 0.002;
-const probabilityThreshold = 0.9;
 
 // Labels
 const labels = {
@@ -39,8 +40,8 @@ const labels = {
 };
 
 // Email
-const emailRecipient = 'jfaircloth@cocg.co';
-const accountLabel = 'Jonathan';
+const emailRecipient = 'example@example.com';
+const accountLabel = 'exampleLabel';
 
 const runTest = function() {
   
@@ -104,7 +105,7 @@ const runTest = function() {
         let alphaA, alphaB, betaA, betaB;
         
         // If either ad is over the conversion threshold, use conversion rate
-        if(group[0].stats.conversions > conversionsGreaterThan || group[j].stats.conversions > conversionsGreaterThan){
+        if((group[0].stats.conversions > conversionsGreaterThan || group[j].stats.conversions > conversionsGreaterThan) && (group[0].stats.clicks > impressionsThreshold && group[j].stats.clicks > impressionsThreshold)){
           alphaA = group[0].stats.conversions;
           betaA = group[0].stats.clicks - alphaA;
           alphaB = group[j].stats.conversions;
@@ -126,14 +127,12 @@ const runTest = function() {
         let decision = bayesianDecision(alphaA, betaA, alphaB, betaB);
         
          // Condition: B > A and clears both thresholds
-        if (decision < decisionThreshold 
-            && test > probabilityThreshold){
+        if (decision < decisionThreshold && test > probabilityThreshold){
           group[j].ad.applyLabel(labels.winning.name);
           table.addRow([group[j].campaignName, group[j].adGroupName, (test * 100).toFixed(2) + '%', (decision * 100).toFixed(2) + '%']);
           
         // Condition: A > B and clears both thresholds
-        } else if (decision < decisionThreshold
-                   && test < 1 - probabilityThreshold){
+        } else if (decision < decisionThreshold && test < 1 - probabilityThreshold){
           group[j].ad.applyLabel(labels.losing.name);
           table.addRow([group[j].campaignName, group[j].adGroupName, (test * 100).toFixed(2) + '%', (decision * 100).toFixed(2) + '%']);
           

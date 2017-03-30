@@ -5,6 +5,11 @@ export function getDayOfYear(date) {
   return Math.ceil((date.getTime()) / 86400000) - yearFirstDay;
 }
 
+export function getLastDayOfMonth(){
+  const date = new Date;
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+}
+
 export function daysBetween(startDate, endDate) {
   return getDayOfYear(endDate) - getDayOfYear(startDate) + 1;
 }

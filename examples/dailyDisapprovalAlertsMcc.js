@@ -12,14 +12,14 @@ const checkAds = function(){
   let localSendEmail = false;
   
   let table = new HtmlTable({
-    title: AdWordsApp.currentAccount().getName() + ' - Disapproved Ads',
+    title: AdWordsApp.currentAccount().getName() + ' - Ads Not Approved',
     columns: ['Campaign', 'Ad Group', 'Status', 'Reasons'],
     style: tableStyle
   });
   
   let report = AdWordsApp.report('SELECT AccountDescriptiveName, CampaignName, AdGroupName, CreativeApprovalStatus, AdGroupAdDisapprovalReasons ' +
       'FROM AD_PERFORMANCE_REPORT ' +
-      'WHERE CampaignStatus = ENABLED and CreativeApprovalStatus NOT_IN [APPROVED, FAMILY_SAFE] ' +
+      'WHERE CampaignStatus = ENABLED and AdGroupStatus = ENABLED and Status = ENABLED and CreativeApprovalStatus NOT_IN [APPROVED, FAMILY_SAFE] ' +
       'DURING LAST_MONTH')
       .rows();
   
@@ -81,7 +81,7 @@ const checkKeywords = function(){
   
   let report = AdWordsApp.report('SELECT AccountDescriptiveName, CampaignName, AdGroupName, ApprovalStatus, KeywordMatchType ' +
       'FROM KEYWORDS_PERFORMANCE_REPORT ' +
-      'WHERE CampaignStatus = ENABLED and ApprovalStatus != APPROVED and CampaignName DOES_NOT_CONTAIN_IGNORE_CASE "display" ')
+      'WHERE CampaignStatus = ENABLED and AdGroupStatus = ENABLED and Status = ENABLED and ApprovalStatus != APPROVED and CampaignName DOES_NOT_CONTAIN_IGNORE_CASE "display" ')
       .rows();
   
   while(report.hasNext()){
