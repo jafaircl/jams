@@ -64,7 +64,7 @@ main(); // remove this from your bundled output
 Build an iterator and run through it normally:
 
 ```javascript
-import { Iterator } from './shared/iterator';
+import { Iterator } from './core/iterator';
 
 const conditions = ['Impressions > 100', 'Clicks > 0'];
 const dateRange = 'LAST_30_DAYS';
@@ -85,7 +85,7 @@ while(ads.hasNext()){
 Quickly build and start iterating. "this" is set to the next item in the iterator:
 
 ```javascript
-import { Iterator } from './shared/iterator';
+import { Iterator } from './core/iterator';
 
 new Iterator({
   entity: AdWordsApp.keywords(),
@@ -136,7 +136,7 @@ function main(){
 On a test account where there are 400 ad groups and 649 ads that meet this criteria, the above takes 4:57 (297 seconds) to run. That's 1/6 of your allotted run time without even doing anything to the ads you fetched. Now, consider the following code:
 
 ```javascript
-import { Iterator } from './shared/iterator';
+import { Iterator } from './core/iterator';
 
 const conditions = ['Impressions > 0'];
 const dateRange = 'LAST_30_DAYS';
