@@ -136,77 +136,46 @@ var Iterator = function () {
   return Iterator;
 }();
 
+var conditions = ['Impressions > 0'];
+var dateRange = 'LAST_30_DAYS';
+
 var main = function main() {
-
-  // Use selectors
-  var selector = new Iterator({
-    entity: AdWordsApp.campaigns()
-  }).select();
-
-  while (selector.hasNext()) {
-    var campaign = selector.next();
-    Logger.log(campaign.getName());
-  }
-
-  // Go straight to iterating:
-  // Use arrows
-  new Iterator({
-    entity: AdWordsApp.campaigns()
-  }).iterate(function (campaign) {
-    Logger.log(campaign.getName());
-  });
-
-  // Don't use arrows
-  new Iterator({
-    entity: AdWordsApp.campaigns()
-  }).iterate(function () {
-    Logger.log(this.getName());
-  });
-
-  // Create an array of objects using arrow functions
-  var arrowArray = new Iterator({
-    entity: AdWordsApp.campaigns()
+  var ads = new Iterator({
+    entity: AdWordsApp.ads(),
+    conditions: conditions,
+    dateRange: dateRange
   }).toArray({
-    id: function id(campaign) {
-      return campaign.getId();
+    id: function id(ad) {
+      return ad.getId();
     },
-    clicks: function clicks(campaign) {
-      var stats = campaign.getStatsFor('YESTERDAY');
+    adGroupId: function adGroupId(ad) {
+      return ad.getAdGroup().getId();
+    },
+    stats: function stats(ad) {
+      var stats = ad.getStatsFor(dateRange);
       return {
         clicks: stats.getClicks(),
-        ctr: stats.getCtr()
+        impressions: stats.getImpressions()
       };
     }
   });
 
-  Logger.log(arrowArray);
+  // Loop backwards so filtering the ads doesn't mess up indexing
+  var i = ads.length - 1;
+  for (i; i >= 0; i = ads.length - 1) {
 
-  // Create an array of objects
-  var thisArray = new Iterator({
-    entity: AdWordsApp.campaigns()
-  }).toArray({
-    name: function name() {
-      return this.getName();
-    },
-    conversions: function conversions() {
-      var stats = this.getStatsFor('YESTERDAY');
-      return {
-        conversions: stats.getConversions(),
-        conversionRate: stats.getConversionRate()
-      };
-    }
-  });
+    // Filter the array for ads in the same ad group
+    var group = ads.filter(function (ad) {
+      return ad.adGroupId === ads[i].adGroupId;
+    });
 
-  Logger.log(thisArray);
+    Logger.log(group[0].adGroupId);
 
-  // Create an array from a single property
-  var singleArray = new Iterator({
-    entity: AdWordsApp.campaigns()
-  }).toArray(function (campaign) {
-    return campaign.getName();
-  });
-
-  Logger.log(singleArray);
+    // Filter out the ads in this ad group from the main array
+    ads = ads.filter(function (ad) {
+      return ad.adGroupId !== ads[i].adGroupId;
+    });
+  }
 };
 
 main();

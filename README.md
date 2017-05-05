@@ -197,16 +197,16 @@ import { Iterator } from './core/iterator';
 const conditions = ['Impressions > 0'];
 const dateRange = 'LAST_30_DAYS';
 
-function main(){
+const main = function() {
   let ads = new Iterator({
     entity: AdWordsApp.ads(),
     conditions: conditions,
     dateRange: dateRange,
   }).toArray({
-    id(){ return this.getId(); },
-    adGroupId(){ return this.getAdGroup().getId(); },
-    stats(){ 
-      let stats = this.getStatsFor(dateRange);
+    id: ad => ad.getId(),
+    adGroupId: ad => ad.getAdGroup().getId(),
+    stats: ad => { 
+      let stats = ad.getStatsFor(dateRange);
       return {
         clicks: stats.getClicks(),
         impressions: stats.getImpressions()
@@ -226,7 +226,7 @@ function main(){
     // Filter out the ads in this ad group from the main array
     ads = ads.filter(ad => ad.adGroupId !== ads[i].adGroupId);
   }
-}
+};
 ```
 
 On the same account, this takes 44 seconds which is 85% faster. On large accounts, the time savings could be the difference between your script timing out or not.
