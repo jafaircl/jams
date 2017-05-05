@@ -1,3 +1,5 @@
+import { isFunction, isObject } from '../shared/utils';
+
 const repeatableMethods = {
   withIds: 'ids',
   withCondition: 'conditions',
@@ -17,7 +19,7 @@ export class Iterator {
     this.props = props;
   }
   
-  build(selector = this.props.entity) {
+  select(selector = this.props.entity) {
 
     for (let method in repeatableMethods) {
       selector = chainMethods(
@@ -31,31 +33,42 @@ export class Iterator {
       .get();
   }
   
-  run(logic) {
-    this.iterator = this.build();
+  iterate(logic) {
+    this.iterator = this.select();
 
     while (this.iterator.hasNext()) {
-      logic.call(this.iterator.next());
-    }
-  }
-
-  toArray(input){
-    this.iterator = this.build();
-    let arr = [];
-    
-    while(this.iterator.hasNext()) {
-      this.item = this.iterator.next();
-      
-      if(input){
-        let obj = {};
-        for(let field in input){
-          obj[field] = input[field].call(this.item);
-        }
-        arr.push(obj);
-      } else {
-        arr.push(this.item);
+      try {
+        logic.call(arguments, this.iterator.next());
+      } catch (e) {
+        logic.call(this.iterator.next());
       }
     }
+  }
+  
+  toArray(input){
+    let arr = [];
+    
+    this.iterate(function(){
+      if(input){
+        if(isObject(input)){
+          let obj = {};
+          
+          for(let field in input){
+            try {
+              obj[field] = input[field].call(arguments, this);
+            } catch (e) {
+              obj[field] = input[field].call(this);
+            }
+          }
+          arr.push(obj);
+        } else {
+          arr.push(input(this));
+        }
+      } else {
+        arr.push(this);
+      }
+    });
+    
     return arr;
   }
 }

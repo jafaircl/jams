@@ -61,7 +61,7 @@ main(); // remove this from your bundled output
 
 ### Iterators
 
-Build an iterator and run through it normally:
+Build a selector and iterate through it normally:
 
 ```javascript
 import { Iterator } from './core/iterator';
@@ -73,7 +73,7 @@ let ads = new Iterator({
   entity: AdWordsApp.ads(),
   conditions: conditions,
   dateRange: dateRange,
-}).build();
+}).select();
 
 while(ads.hasNext()){
   let ad = ads.next();
@@ -91,12 +91,68 @@ new Iterator({
   entity: AdWordsApp.keywords(),
   conditions: ['Impressions > 100', 'Clicks > 0'],
   dateRange: 'LAST_30_DAYS',
-}).run(function(){
-  this.getText(); // returns keyword text
+}).iterate(function(){
+  Logger.log(this.getText()); // returns keyword text
+});
+
+// Or use a more descriptive arrow function
+new Iterator({
+  entity: AdWordsApp.keywords(),
+  conditions: ['Impressions > 100', 'Clicks > 0'],
+  dateRange: 'LAST_30_DAYS',
+}).iterate(keyword => {
+  Logger.log(keyword.getText()); // returns keyword text
 });
 ```
 
-Turn the iterator into an array. This can keep you from traversing the hierarchy, slowing down your script. Consider the following code which logs an array of information about ads in an ad group:
+Turn the iterator into an array, which will be filterable, sortable and searchable.
+
+```javascript
+import { Iterator } from './core/iterator';
+
+// Create an array of objects using arrow functions
+let arrowArray = new Iterator({
+  entity: AdWordsApp.campaigns()
+}).toArray({
+  id: campaign => campaign.getId(),
+  // Create a nested property
+  clicks: campaign => {
+    let stats = campaign.getStatsFor('YESTERDAY');
+    return {
+      clicks: stats.getClicks(),
+      ctr: stats.getCtr()
+    };
+  }
+});
+
+Logger.log(arrowArray);
+
+// Create an array of objects
+let thisArray = new Iterator({
+  entity: AdWordsApp.campaigns()
+}).toArray({
+  name(){ return this.getName(); },
+  // Create a nested property
+  conversions(){
+    let stats = this.getStatsFor('YESTERDAY');
+    return {
+      conversions: stats.getConversions(),
+      conversionRate: stats.getConversionRate()
+    };
+  }
+});
+
+Logger.log(thisArray);
+
+// Create an array from a single property
+let singleArray = new Iterator({
+  entity: AdWordsApp.campaigns()
+}).toArray(campaign => campaign.getName());
+
+Logger.log(singleArray);
+```
+
+Building an array can keep you from traversing the hierarchy, which will slow down your script. Consider the following code which logs an array of information about ads in an ad group:
 
 ```javascript
 function main(){

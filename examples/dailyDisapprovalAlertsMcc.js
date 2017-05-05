@@ -4,7 +4,7 @@ import { isNull, isUndefined, isEmpty } from './shared/utils';
 
 const emailAddresses = {
   // 'label': 'email@example.com'
-  'Jonathan': 'jfaircloth@cocg.co'
+  'Jonathan': 'jfaircloth@cocg.co',
 };
 let sendEmail = false;
 
@@ -32,6 +32,7 @@ const checkAds = function(){
       sendEmail = true;
       localSendEmail = true;
       table.addRow([row.CampaignName, row.AdGroupName, row.CreativeApprovalStatus, formattedReasons.join('<br>')]);
+      
     }
   }
   
@@ -49,7 +50,7 @@ const checkAdExtensions = function(){
     style: tableStyle
   });
   
-  let report = AdWordsApp.report('SELECT AccountDescriptiveName, PlaceholderType, AttributeValues, ValidationDetails, DisapprovalShortNames ' +
+  let report = AdWordsApp.report('SELECT AccountDescriptiveName, PlaceholderType, AttributeValues, ValidationDetails, DisapprovalShortNames, FeedItemId ' +
       'FROM PLACEHOLDER_FEED_ITEM_REPORT ' +
       'DURING LAST_30_DAYS')
       .rows();
@@ -58,10 +59,29 @@ const checkAdExtensions = function(){
     let row = report.next(),
       type = checkExtensionType(row.PlaceholderType);
     
-    if ( row.ValidationDetails !== 'Approved' ) {
+    if ( row.ValidationDetails !== 'Approved' && row.ValidationDetails !== 'Eligible' ) {
       sendEmail = true;
       localSendEmail = true;
       table.addRow([type, row.ValidationDetails, formatExtensionHtml(row.PlaceholderType, row.AttributeValues)]);
+      
+      if(type === 'Call'){
+        let phoneNumberSelector = AdWordsApp.extensions()
+                                            .phoneNumbers()
+                                            .withIds([row.FeedItemId])
+                                            .get();
+        while(phoneNumberSelector.hasNext()){
+          let number = phoneNumberSelector.next();
+          let current = number.getPhoneNumber();
+          
+          try {
+            number.setPhoneNumber('(555) 555 - 5555');
+            number.setPhoneNumber(current);
+          } catch(e){
+            Logger.log(e);
+            table.addRow([e]);
+          }
+        }
+      }
     }
   }
   
@@ -99,7 +119,7 @@ const checkKeywords = function(){
   return localSendEmail === true ?  table.html : '';
 };
 
-(function main() {
+const main = function () {
   for ( let label in emailAddresses ) {
     let emailBody = '';
     let accountIterator = MccApp.accounts()
@@ -126,4 +146,6 @@ const checkKeywords = function(){
       });
     }
   }
-})();
+};
+
+main();

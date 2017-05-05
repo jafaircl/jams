@@ -13,7 +13,7 @@ function main () {
     entity: AdWordsApp.keywords(),
     conditions: ['Impressions > 100', 'Clicks > 0'],
     dateRange: 'ALL_TIME'
-  }).run(function(){
+  }).iterate(function(){
     table.addRow([
       this.getText(),
       this.getStatsFor('ALL_TIME').getCtr()

@@ -77,7 +77,15 @@ export function deDuplicate(arr) {
   });
 }
 
-// Sort an object by one of its properties
-export function sortObject(obj, fn){
-  
+export function convertGender(str){
+  switch ( str ) {
+  case 'Male':
+    return 10;
+  case 'Female':
+    return 11;
+  case 'Undetermined':
+    return 20;
+  default:
+    return null;
+  }
 }

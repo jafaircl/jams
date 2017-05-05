@@ -13,6 +13,7 @@
         "MailApp": true,
         "MccApp": true,
         "MimeType": true,
+        "Prediction": true,
         "SpreadsheetApp": true,
         "UrlFetchApp": true,
         "Utilities": true,

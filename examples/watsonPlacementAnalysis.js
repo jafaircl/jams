@@ -46,7 +46,7 @@ const languageDetection = () => {
   let excludedPlacementList = new Iterator({
     entity: AdWordsApp.excludedPlacementLists(),
     conditions: ['Name = "Language Excluded Placements"']
-  }).build();
+  }).select();
   
   // Check for placement list
   if(excludedPlacementList.totalNumEntities() === 0){
@@ -111,7 +111,7 @@ const languageDetection = () => {
   
   new Iterator({
     entity: AdWordsApp.campaigns()
-  }).run(function(){
+  }).iterate(function(){
     this.addExcludedPlacementList(excludedPlacementList);
   });
   
