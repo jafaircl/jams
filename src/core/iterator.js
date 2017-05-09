@@ -1,4 +1,4 @@
-import { isFunction, isObject } from '../shared/utils';
+import { isFunction, isNull, isObject } from '../shared/utils';
 
 const repeatableMethods = {
   withIds: 'ids',
@@ -48,26 +48,28 @@ export class Iterator {
   toArray(input){
     let arr = [];
     
-    this.iterate(function(){
-      if(input){
-        if(isObject(input)){
-          let obj = {};
+    if(input){
+      
+      this.iterate(function() {
+        
+        if(isFunction(input)){
           
+          arr.push(input.call(arguments, this));
+        } else {
+          
+          let obj = {};
           for(let field in input){
-            try {
-              obj[field] = input[field].call(arguments, this);
-            } catch (e) {
-              obj[field] = input[field].call(this);
-            }
+            obj[field] = input[field].call(arguments, this);
           }
           arr.push(obj);
-        } else {
-          arr.push(input(this));
         }
-      } else {
-        arr.push(this);
-      }
-    });
+      });
+    } else {
+      
+      this.iterate(item => {
+        arr.push(item);
+      });
+    }
     
     return arr;
   }

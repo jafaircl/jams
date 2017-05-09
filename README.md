@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Jams is a library of ES6 classes and helper functions for use in AdWords Scripts.
+Jams is a library of ES6 classes and helper functions for use in AdWords Scripts. Build your scripts to take advantage of ES6/ES2015, automatically compile them on your machine and paste them into AdWords. You can also minify the output to help prevent modification.
 
 ## Getting Started
 
@@ -82,20 +82,11 @@ while(ads.hasNext()){
 }
 ```
 
-Quickly build and start iterating. "this" is set to the next item in the iterator:
+Build and start iterating:
 
 ```javascript
 import { Iterator } from './core/iterator';
 
-new Iterator({
-  entity: AdWordsApp.keywords(),
-  conditions: ['Impressions > 100', 'Clicks > 0'],
-  dateRange: 'LAST_30_DAYS',
-}).iterate(function(){
-  Logger.log(this.getText()); // returns keyword text
-});
-
-// Or use a more descriptive arrow function
 new Iterator({
   entity: AdWordsApp.keywords(),
   conditions: ['Impressions > 100', 'Clicks > 0'],
@@ -110,10 +101,12 @@ Turn the iterator into an array, which will be filterable, sortable and searchab
 ```javascript
 import { Iterator } from './core/iterator';
 
-// Create an array of objects using arrow functions
-let arrowArray = new Iterator({
+let campaigns = new Iterator({
   entity: AdWordsApp.campaigns()
-}).toArray({
+});
+
+// Create an array of objects for the properties you need
+let arr = campaigns.toArray({
   id: campaign => campaign.getId(),
   // Create a nested property
   clicks: campaign => {
@@ -125,31 +118,17 @@ let arrowArray = new Iterator({
   }
 });
 
-Logger.log(arrowArray);
-
-// Create an array of objects
-let thisArray = new Iterator({
-  entity: AdWordsApp.campaigns()
-}).toArray({
-  name(){ return this.getName(); },
-  // Create a nested property
-  conversions(){
-    let stats = this.getStatsFor('YESTERDAY');
-    return {
-      conversions: stats.getConversions(),
-      conversionRate: stats.getConversionRate()
-    };
-  }
-});
-
-Logger.log(thisArray);
+Logger.log(arr);
 
 // Create an array from a single property
-let singleArray = new Iterator({
-  entity: AdWordsApp.campaigns()
-}).toArray(campaign => campaign.getName());
+let single = campaigns.toArray(campaign => campaign.getName());
 
-Logger.log(singleArray);
+Logger.log(single);
+
+// Grab everything (not recommended)
+let everything = campaigns.toArray();
+
+Logger.log(everything);
 ```
 
 Building an array can keep you from traversing the hierarchy, which will slow down your script. Consider the following code which logs an array of information about ads in an ad group:
