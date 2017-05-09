@@ -8,7 +8,7 @@ import { isArray } from './utils';
  * @param {string} labelColor - A hex color for the label.
  */
 export function addLabel(labelName, labelColor) {
-  
+
   var labelIterator = AdWordsApp.labels()
       .withCondition('Name = "' + labelName + '"')
       .get();
@@ -23,7 +23,7 @@ export function addLabel(labelName, labelColor) {
  * @param {string} contains - A unique text string for all the labesl to delete.
  */
 export function deleteLabel(contains) {
-  
+
   var labelIterator = AdWordsApp.labels()
       .withCondition('LabelName CONTAINS "' + contains + '"')
       .get();
@@ -41,11 +41,11 @@ export function deleteLabel(contains) {
  */
 export function removeLabelFrom(entity, labelNames) {
   let labelString = isArray(labelNames) ? labelNames.join('","') : labelNames;
-  
+
   new Iterator({
     entity: entity,
     conditions: [`LabelNames CONTAINS_ANY ["${labelString}"]`]
-  }).run(function(){
+  }).iterate(function(){
     if(isArray(labelNames)){
       for(let i in labelNames){
         this.removeLabel(labelNames[i]);
@@ -53,6 +53,6 @@ export function removeLabelFrom(entity, labelNames) {
     } else {
       this.removeLabel(labelNames);
     }
-    
+
   });
 }

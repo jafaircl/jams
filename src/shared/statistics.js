@@ -1,6 +1,6 @@
 import { j$ } from '../tools/jstat.es6';
 
-/*
+/**
  * Bayesian A/B Testing
  * ---
  * @param {number} alphaA - The number of successes for A
@@ -27,7 +27,7 @@ export function bayesianTest(alphaA, betaA, alphaB, betaB) {
   return test;
 }
 
-/*
+/**
  * Bayesian Decision Rules
  * ---
  * @param {number} alphaA - The number of successes for A
