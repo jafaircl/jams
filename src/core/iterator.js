@@ -1,10 +1,5 @@
-import { isFunction, isNull, isObject } from '../shared/utils';
-
-const repeatableMethods = {
-  withIds: 'ids',
-  withCondition: 'conditions',
-  orderBy: 'orderBy'
-};
+import { isFunction } from '../shared/utils';
+import { selectorMethods } from './constants';
 
 export function chainMethods(method, criteria, selector) {
   for (let i in criteria) {
@@ -19,12 +14,12 @@ export class Iterator {
     this.props = props;
   }
   
-  select(selector = this.props.entity) {
+  select(selector = this.props.entity || this.props.parent) {
 
-    for (let method in repeatableMethods) {
+    for (let method in selectorMethods) {
       selector = chainMethods(
         method,
-        this.props[repeatableMethods[method]],
+        this.props[selectorMethods[method]],
         selector
       );
     }

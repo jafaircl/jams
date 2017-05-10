@@ -209,3 +209,124 @@ const main = function() {
 ```
 
 On the same account, this takes 44 seconds which is 85% faster. On large accounts, the time savings could be the difference between your script timing out or not.
+
+### Builders
+
+Builders can create any entity except campaigns and shared sets (excluded placement and negative keyword lists). For example, to create an ad group:
+
+```javascript
+let builder = new Builder({
+  parent: AdWordsApp.campaigns(),
+  conditions: ['Name = "(Display) Example"']
+});
+
+builder.createAdGroup({
+  name: 'Example',
+  status: 'PAUSED',
+  cpc: 3
+});
+```
+
+User the result to create ads and an exact match keyword in the ad group:
+
+```javascript
+let builder = new Builder({
+  parent: AdWordsApp.campaigns(),
+  conditions: ['Name = "(Search) Example"']
+});
+
+let adGroup = builder.createAdGroup({
+  name: 'Example',
+  status: 'PAUSED',
+  cpc: 3
+});
+
+let adGroupBuilder = new Builder(adGroup);
+
+adGroupBuilder.createExpandedTextAd({
+  headlinePart1: 'Headline 1',
+  headlinePart2: 'Headline 2',
+  description: 'Description',
+  path1: 'path1',
+  path2: 'path2',
+  finalUrl: 'https://www.google.com'
+});
+
+adGroupBuilder.createKeyword({
+  text: '[testing]'
+});
+```
+
+For display criteria, you can create a negative audience, keyword, placement, or topic by adding "exclude: true":
+
+```javascript
+adGroupBuilder.createDisplayKeyword({
+  text: '[example]',
+  exclude: true
+});
+```
+
+Full example:
+
+```javascript
+import { Builder, createImageFromUrl } from './core/builder';
+// We need a polyfill for Object.assign().
+import * as _polyfill from './polyfills/assign'; _polyfill;
+
+// Name of the ad groups we want to create
+const adGroups = [
+  'Test - Topic Targeting',
+  'Test - Affinity Targeting',
+  'Test - Contextual Targeting'
+];
+
+// Shared properties for the ads we want to create
+const sharedAdProperties = {
+  businessName: 'business name',
+  logoImage: createImageFromUrl('https://www.example.com/logo.png', 'testing'),
+  finalUrl: 'https://www.google.com',
+};
+
+// Unique properties for the ads we want to create
+const ads = [{
+  shortHeadline: 'short headline 1',
+  longHeadline: 'longer headline 1',
+  description: 'decription 1',
+  marketingImage: createImageFromUrl('https://www.example.com/img1.png', 'mktngimg1')
+},{
+  shortHeadline: 'short headline 2',
+  longHeadline: 'longer headline 2',
+  description: 'decription 2',
+  marketingImage: createImageFromUrl('https://www.example.com/img2.png', 'mktngimg2')
+}];
+
+const main = function () {
+  
+  // Define an ad group builder by selecting the parent
+  let builder = new Builder({
+    parent: AdWordsApp.campaigns(),
+    conditions: ['Name = "(Display) Example"']
+  });
+  
+  // Iterate through ad groups we want to create
+  for(let i in adGroups){
+    
+    // Create the ad group
+    let adGroup = builder.createAdGroup({
+      name: adGroups[i],
+      status: 'PAUSED',
+      cpc: 3
+    });
+    
+    // Iterate through the ads we want to create
+    for(let j in ads){
+      let ad = new Builder(adGroup);
+      // Combine the shared and unique properties of the ads
+      let obj = Object.assign(ads[j], sharedAdProperties);
+      
+      // Create the ads
+      ad.createResponsiveDisplayAd(obj);
+    }
+  }
+};
+```

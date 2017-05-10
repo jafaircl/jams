@@ -1,0 +1,5 @@
+const main = function() {
+
+};
+
+main();
