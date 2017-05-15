@@ -16,14 +16,31 @@ import {
   responsiveDisplayAdMethods
 } from './constants';
 
+/**
+ * Create an image formatted for AdWords from a URL
+ * @param   {string} url  URL for the image
+ * @param   {string} name Name of the image
+ * @returns {object} image formatted for AdWords
+ */
 export function createImageFromUrl(url, name){
   return formatMediaFromUrl(url, name, 'newImageBuilder');
 }
 
+/**
+ * Create a media bundle (.zip) formatted for AdWords from a URL
+ * @param   {string} url  URL for the bundle (.zip)
+ * @param   {string} name Name of the bundle
+ * @returns {object} bundle formatted for AdWords
+ */
 export function createMediaBundleFromUrl(url, name){
   return formatMediaFromUrl(url, name, 'newMediaBundleBuilder');
 }
 
+/**
+ * Create a video from its YouTube ID
+ * @param   {string} videoId ID of the video
+ * @returns {object} video formatted for AdWords
+ */
 export function createVideoFromYouTubeId(videoId){
   return AdWordsApp.adMedia().newVideoBuilder()
     .withYouTubeVideoId(videoId)

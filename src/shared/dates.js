@@ -95,3 +95,22 @@ export function twoDigitMonth(m) {
 export function twoDigitDate(d) {
   return d < 10 ? '0' + d : d;
 }
+
+export function lastXDays(x){
+  let date = new Date();
+  let startDate = new Date(date.getTime() - ((x + 1) * 86400000));
+  let endDate = new Date(date.getTime() - 2 * 86400000);
+  return formatDateRange(startDate, endDate);
+}
+
+export function last60Days() {
+  return lastXDays(60);
+}
+
+export function last90Days() {
+  return lastXDays(90);
+}
+
+export function last120Days() {
+  return lastXDays(120);
+}

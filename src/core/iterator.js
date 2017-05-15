@@ -1,4 +1,4 @@
-import { isFunction } from '../shared/utils';
+import { isFunction, isArray } from '../shared/utils';
 import { selectorMethods } from './constants';
 
 export function chainMethods(method, criteria, selector) {
@@ -23,8 +23,14 @@ export class Iterator {
         selector
       );
     }
-    return selector.forDateRange(this.props.dateRange)
-      .withLimit(this.props.limit)
+    
+    if(isArray(this.props.dateRange)){
+      selector = selector.forDateRange(this.props.dateRange[0], this.props.dateRange[1]);
+    } else {
+      selector = selector.forDateRange(this.props.dateRange);
+    }
+    
+    return selector.withLimit(this.props.limit)
       .get();
   }
   

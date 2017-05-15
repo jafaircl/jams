@@ -270,10 +270,10 @@ Full example:
 
 ```javascript
 import { Builder, createImageFromUrl } from './core/builder';
-// We need a polyfill for Object.assign().
+// We need a polyfill for Object.assign()
 import * as _polyfill from './polyfills/assign'; _polyfill;
 
-// Name of the ad groups we want to create
+// Names of the ad groups we want to create
 const adGroups = [
   'Test - Topic Targeting',
   'Test - Affinity Targeting',

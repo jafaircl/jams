@@ -1,5 +1,5 @@
-const main = function() {
-
+const main = function () {
+  
 };
 
 main();
