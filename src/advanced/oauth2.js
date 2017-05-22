@@ -36,7 +36,7 @@ export class OAuth2 {
    * @param {string=} opt_scope Optional string of spaced-delimited scopes.
    * @return {string} The access token
    */
-  _authenticate(tokenUrl, payload, opt_authHeader, opt_scope) {
+  static _authenticate(tokenUrl, payload, opt_authHeader, opt_scope) {
     let options = {muteHttpExceptions: true, method: 'POST', payload: payload};
     let accessToken;
     
@@ -69,14 +69,15 @@ export class OAuth2 {
    * @param {string=} opt_scope Space-delimited set of scopes.
    * @return {!OAuth2UrlFetchApp} The object for making authenticated requests.
    */
-  withRefreshToken(tokenUrl, clientId, clientSecret, refreshToken, opt_scope) {
+  static withRefreshToken(tokenUrl, clientId, clientSecret, refreshToken, opt_scope) {
     const payload = {
       grant_type: 'refresh_token',
       client_id: clientId,
       client_secret: clientSecret,
       refresh_token: refreshToken
     };
-    this.accessToken = this._authenticate(tokenUrl, payload, null, opt_scope);
+    const accessToken = this._authenticate(tokenUrl, payload, null, opt_scope);
+    return new OAuth2(accessToken);
   }
   
   /**
@@ -88,14 +89,15 @@ export class OAuth2 {
    * @param {string=} opt_scope Space-delimited set of scopes.
    * @return {!OAuth2UrlFetchApp} The object for making authenticated requests.
    */
-  withClientCredentials(tokenUrl, clientId, clientSecret, opt_scope) {
+  static withClientCredentials(tokenUrl, clientId, clientSecret, opt_scope) {
     let authHeader = 'Basic ' + Utilities.base64Encode([clientId, clientSecret].join(':'));
     let payload = {
       grant_type: 'client_credentials',
       client_id: clientId,
       client_secret: clientSecret
     };
-    this.accessToken = this._authenticate(tokenUrl, payload, authHeader, opt_scope);
+    const accessToken = this._authenticate(tokenUrl, payload, authHeader, opt_scope);
+    return new OAuth2(accessToken);
   }
   
   /**
@@ -108,14 +110,15 @@ export class OAuth2 {
    * @param {string=} opt_scope Space-delimited set of scopes.
    * @return {!OAuth2UrlFetchApp} The object for making authenticated requests.
    */
-  withPassword(tokenUrl, clientId, username, password, opt_scope) {
+  static withPassword(tokenUrl, clientId, username, password, opt_scope) {
     const payload = {
       grant_type: 'password',
       client_id: clientId,
       username: username,
       password: password
     };
-    this.accessToken = this._authenticate(tokenUrl, payload, null, opt_scope);
+    const accessToken = this._authenticate(tokenUrl, payload, null, opt_scope);
+    return new OAuth2(accessToken);
   }
   
   /**
@@ -129,7 +132,7 @@ export class OAuth2 {
    * @param {string} scope Space-delimited set of scopes.
    * @return {!OAuth2UrlFetchApp} The object for making authenticated requests.
    */
-  withServiceAccount(tokenUrl, serviceAccount, key, scope) {
+  static withServiceAccount(tokenUrl, serviceAccount, key, scope) {
     let assertionTime = new Date();
     const jwtHeader = '{"alg":"RS256","typ":"JWT"}';
     let jwtClaimSet = {
@@ -147,6 +150,7 @@ export class OAuth2 {
       grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
       assertion: jwtAssertion
     };
-    this.accessToken = this._authenticate(tokenUrl, payload, null);
+    const accessToken = this._authenticate(tokenUrl, payload, null);
+    return new OAuth2(accessToken);
   }
 }

@@ -1,4 +1,5 @@
-import { isFunction, isArray } from '../shared/utils';
+import { isArray, isFunction } from '../shared/utils';
+
 import { selectorMethods } from './constants';
 
 export function chainMethods(method, criteria, selector) {
@@ -12,35 +13,46 @@ export class Iterator {
   
   constructor(props){
     this.props = props;
+    this.entity = this.props.entity;
+    this.parent = this.props.parent;
+    this.conditions = this.props.conditions;
+    this.dateRange = this.props.dateRange;
+    this.orderBy = this.props.orderBy;
+    this.ids = this.props.ids;
+    this.limit = this.props.limit;
   }
   
-  select(selector = this.props.entity || this.props.parent) {
+  select(selector = this.entity || this.parent) {
 
     for (let method in selectorMethods) {
       selector = chainMethods(
         method,
-        this.props[selectorMethods[method]],
+        this[selectorMethods[method]],
         selector
       );
     }
     
-    if(isArray(this.props.dateRange)){
-      selector = selector.forDateRange(this.props.dateRange[0], this.props.dateRange[1]);
+    if(isArray(this.dateRange)){
+      selector = selector.forDateRange(this.dateRange[0], this.dateRange[1]);
     } else {
-      selector = selector.forDateRange(this.props.dateRange);
+      selector = selector.forDateRange(this.dateRange);
     }
     
-    return selector.withLimit(this.props.limit)
+    return selector.withLimit(this.limit)
       .get();
   }
   
   iterate(logic) {
     this.iterator = this.select();
-
-    while (this.iterator.hasNext()) {
-      try {
-        logic.call(arguments, this.iterator.next());
-      } catch (e) {
+    
+    try {
+      while (this.iterator.hasNext()) {
+        logic(this.iterator.next());
+      }
+        
+    } catch (e) {
+      Logger.log(e);
+      while (this.iterator.hasNext()) {
         logic.call(this.iterator.next());
       }
     }

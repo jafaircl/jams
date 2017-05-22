@@ -96,21 +96,16 @@ export function twoDigitDate(d) {
   return d < 10 ? '0' + d : d;
 }
 
-export function lastXDays(x){
+export function lastXDays(x, dateBuffer = 1){
   let date = new Date();
-  let startDate = new Date(date.getTime() - ((x + 1) * 86400000));
+  let startDate = new Date(date.getTime() - ((x + dateBuffer) * 86400000));
   let endDate = new Date(date.getTime() - 2 * 86400000);
   return formatDateRange(startDate, endDate);
 }
 
-export function last60Days() {
-  return lastXDays(60);
-}
-
-export function last90Days() {
-  return lastXDays(90);
-}
-
-export function last120Days() {
-  return lastXDays(120);
-}
+export const LAST_60_DAYS = lastXDays(60);
+export const LAST_90_DAYS = lastXDays(90);
+export const LAST_120_DAYS = lastXDays(120);
+export const LAST_180_DAYS = lastXDays(180);
+export const LAST_365_DAYS = lastXDays(365);
+export const THIS_YEAR = lastXDays(getDayOfYear(new Date()), 0);

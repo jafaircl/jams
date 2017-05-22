@@ -1,7 +1,29 @@
 import { Iterator } from '../core/iterator';
 
-export function ortb(rate, budget, tuning, time){
-  return 2 * rate * Math.pow(budget * Math.pow(tuning, 2) / time, 1 / 3);
+/**
+ * Optimal Real-Time Bidding Formula
+ * See: http://discovery.ucl.ac.uk/1496878/1/weinan-zhang-phd-2016.pdf
+ * Courtesy: wnzhang (https://github.com/wnzhang/rtbarbitrage/blob/master/python/arbitrage_rtb_test.py)
+ * @param {number} pctr: predicted KPI (CTR, CVR, etc)
+ * @param {number} base_ctr : base KPI (CTR, CVR, etc)
+ * @param {number} dsp_l : market price of a click/conversion/impression
+ * @param {number} para : lamda (daily budget / clicks per day works well )
+ */
+export function optimalRealTimeBid (pctr, base_ctr, dsp_l, para) {
+  return Math.sqrt(pctr * dsp_l * para / base_ctr + dsp_l * dsp_l) - dsp_l;
+}
+
+/**
+ * Statistical Arbitrage Mining Bid
+ * See: http://discovery.ucl.ac.uk/1496878/1/weinan-zhang-phd-2016.pdf
+ * Courtesy: wnzhang (https://github.com/wnzhang/rtbarbitrage/blob/master/python/arbitrage_rtb_test.py)
+ * @param {*} pCtr : predicted CTR
+ * @param {*} pCpc : predicted Cost Per Click
+ * @param {*} cpa : base cost per acquisition
+ * @param {*} r : payoff setting. default is cpa * 0.2
+ */
+export function statisticalArbitrageMiningBid (pCtr, pCpc, cpa, r = 0.2 * cpa){
+  return Math.sqrt(r * pCpc * pCtr * (1 / (pCpc + 1)) + pCpc * pCpc) - pCpc;
 }
 
 export function setMinKeywordProvidedBid(inputConditions, maxBid, type){

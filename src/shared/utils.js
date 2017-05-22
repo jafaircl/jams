@@ -77,6 +77,19 @@ export function deDuplicate(arr) {
   });
 }
 
+export function interval(x, fn){
+  const time = Date.now();
+  for(let i = 0; i < x * 1E10; i++){
+    let delta = Date.now() - time;
+    if(delta >= x){
+      break;
+    }
+  }
+  if(fn){
+    fn();
+  }
+}
+
 export function convertGender(str){
   switch ( str ) {
   case 'Male':
