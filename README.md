@@ -330,3 +330,58 @@ const main = function () {
   }
 };
 ```
+
+### Social Media
+
+There are also classes to interact with the Twitter API & Facebook Graph & Marketing APIs.
+
+#### Facebook
+
+Here's an example that sets the daily budget for an ad set:
+
+```javascript
+import { Facebook } from './advanced/facebook';
+
+const FB_ACCT_ID = 'YOUR FB ACCOUNT ID';
+const FB_APP_ID = 'YOUR FB APP ID';
+const FB_APP_SECRET = 'YOUR FB APP SECRET';
+const FB_API_TOKEN = 'YOUR FB API TOKEN';
+
+const main = function () {
+  
+  let facebook = new Facebook({
+    appId: FB_APP_ID,
+    appSecret: FB_APP_SECRET,
+    marketingApiAccessToken: FB_API_TOKEN
+  });
+  
+  let result = facebook.post(`v2.9/${YOUR AD SET ID}`, {
+    daily_budget: '900'
+  }, FB_API_TOKEN);
+  Logger.log(result);
+  
+};
+```
+
+#### Twitter
+
+Here's an example that gets the trends for a location:
+
+```javascript
+import { Twitter } from './advanced/twitter';
+
+const woeid = '2478307';
+
+const main = function () {
+  
+  let twitter = new Twitter({
+    consumerKey: 'CONSUMER_KEY',
+    consumerSecret: 'CONSUMER_SECRET'
+  });
+
+  let trends = twitter.getTrendsForLocation(woeid);
+
+  Logger.log(trends);
+  
+};
+```
