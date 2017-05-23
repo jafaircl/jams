@@ -9,7 +9,7 @@ export class Twitter {
   
   getTweets(url){
     url = encodeURI(url);
-    Logger.log(url);
+    
     let response = OAuth2.withClientCredentials(
                      this.tokenUrl,
                      this.props.consumerKey,
